@@ -1,6 +1,11 @@
-#lang racket
-(require "util.rkt")
-(provide <timezone-abbrev>)
+#lang racket/base
+(require
+ racket/string
+ (planet bzlib/date-tz)
+ "util.rkt")
+
+(provide <timezone>
+         <timezone-abbrev>)
 
 ; Timezone names
 ; http://en.wikipedia.org/wiki/List_of_time_zone_abbreviations
@@ -135,6 +140,19 @@
    (sort (map (lambda (tz)
                 (cons (string-downcase (symbol->string (car tz))) tz))
               timezones)
+         (lambda (a b)
+           (> (string-length (car a))
+              (string-length (car b)))))))
+
+(define timezone-names
+  (map (lambda (tz)
+         (list
+          (string-replace (string-downcase tz) "_" " ") tz))
+       (tz-names)))
+
+(define <timezone>
+  (pair-list->parser
+   (sort timezone-names
          (lambda (a b)
            (> (string-length (car a))
               (string-length (car b)))))))
