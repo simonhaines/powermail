@@ -4,7 +4,7 @@
  (planet dvanhorn/packrat)
  (planet bzlib/date/srfi)
  "date.rkt"
- "time-new.rkt"
+ "time.rkt"
  "common.rkt"
  "util.rkt"
  "locale.rkt")  ; Preferences
@@ -72,5 +72,7 @@
   (check-expect (parse-string "13/4/2013 10-12pm") '(2013 4 13 10 0 "Australia/Hobart"))
   (check-expect (parse-string "10-12pm 13/4/2013") '(2013 4 13 10 0 "Australia/Hobart"))
   (check-expect (parse-string "3rd jan 2014 until tomorrow") '(2014 1 3 9 0 "Australia/Hobart"))
+  (check-expect (parse-string "10-12pm aedt 13/4/2013") '(2013 4 13 10 0 39600))
+  (check-expect (parse-string "10:30 aedt - 12pm aest 13/4/2013") '(2013 4 13 10 30 39600))
   
   (test))
