@@ -5,10 +5,11 @@
 (provide
  *date-fmt*
  *date-ref*
+ *time-ref*
  *tz*)
 
 ; Date format: 'MDY = month/day/year, 'DMY = day, month, year
-(define *date-fmt* (make-parameter 'MDY))
+(define *date-fmt* (make-parameter 'DMY))
 
 ; Reference date: context for calculating date offsets
 (define *date-ref* (make-parameter (current-date)))

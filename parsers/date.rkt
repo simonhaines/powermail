@@ -7,10 +7,12 @@
  "util.rkt"
  "locale.rkt")  ; Preferences
 
+(provide
+ <date-spec>
+ <date>)
+
 (define (create-date year month day)
-  (list (cons 'year year)
-        (cons 'month month)
-        (cons 'day day)))
+  (list year month day))
 
 (define (advance-year month day)
   (let loop ((d (build-date (date-year (*date-ref*)) month day)))
@@ -23,7 +25,7 @@
                      (date-month d)
                      (date-day d)))))
 
-(define (advance-day day)
+(define (advance-day day) ; week-day>mday
   (let loop ((d (*date-ref*)))
     (if (not (= (date-week-day d) day))
         (loop (date+ d 1))
