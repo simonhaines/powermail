@@ -37,6 +37,7 @@
           ((d := <date-spec> <comma-whitespace> t := <time-spec>) (append d t))
           ((t := <time-spec> <comma-whitespace> d := <date-spec>) (append d t)))
          (<date-time-duration>
+          ((d := <date-spec> <comma-whitespace> '#\f '#\r '#\o '#\m <whitespace> t := <time-duration>) (append d t))
           ((d := <date-spec> <comma-whitespace> t := <time-duration>) (append d t))
           ((t := <time-duration> <comma-whitespace> d := <date-spec>) (append d t)))
          (<date-duration>
@@ -74,5 +75,6 @@
   (check-expect (parse-string "3rd jan 2014 until tomorrow") '(2014 1 3 9 0 "Australia/Hobart"))
   (check-expect (parse-string "10-12pm aedt 13/4/2013") '(2013 4 13 10 0 39600))
   (check-expect (parse-string "10:30 aedt - 12pm aest 13/4/2013") '(2013 4 13 10 30 39600))
+  (check-expect (parse-string "14/4/2013 from 9am-5pm") '(2013 4 14 9 0 "Australia/Hobart"))
   
   (test))
