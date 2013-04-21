@@ -95,17 +95,17 @@
   (parse <date-spec>
          (<date-spec>
           ((d := <date>) d)
-          (('#\o '#\n <whitespace> d := <date>) d)
-          (('#\o '#\n <whitespace> d := <day-of-week>) (advance-day d))
-          (('#\i '#\n <whitespace> m := <month-name>) (advance-year m 1))
-          (('#\i '#\n <whitespace> '#\1 <whitespace> '#\d '#\a '#\y) (advance-days 1))
-          (('#\i '#\n <whitespace> d := <1or2digit> <whitespace> '#\d '#\a '#\y '#\s) (advance-days d))
-          (('#\i '#\n <whitespace> '#\1 <whitespace> '#\w '#\e '#\e '#\k) (advance-days 7))
-          (('#\i '#\n <whitespace> d := <1or2digit> <whitespace> '#\w '#\e '#\e '#\k '#\s) (advance-days (* d 7)))
-          (('#\n '#\e '#\x '#\t <whitespace> d := <day-of-week>) (advance-day d))
-          (('#\n '#\e '#\x '#\t <whitespace> m := <month-name>) (advance-year m 1))
-          (('#\t '#\h '#\i '#\s <whitespace> d := <day-of-week>) (advance-day d))
-          (('#\t '#\h '#\i '#\s <whitespace> m := <month-name>) (advance-year m 1))
+          (('#\o '#\n <whitespace+> d := <date>) d)
+          (('#\o '#\n <whitespace+> d := <day-of-week>) (advance-day d))
+          (('#\i '#\n <whitespace+> m := <month-name>) (advance-year m 1))
+          (('#\i '#\n <whitespace+> '#\1 <whitespace+> '#\d '#\a '#\y) (advance-days 1))
+          (('#\i '#\n <whitespace+> d := <1or2digit> <whitespace+> '#\d '#\a '#\y '#\s) (advance-days d))
+          (('#\i '#\n <whitespace+> '#\1 <whitespace+> '#\w '#\e '#\e '#\k) (advance-days 7))
+          (('#\i '#\n <whitespace+> d := <1or2digit> <whitespace+> '#\w '#\e '#\e '#\k '#\s) (advance-days (* d 7)))
+          (('#\n '#\e '#\x '#\t <whitespace+> d := <day-of-week>) (advance-day d))
+          (('#\n '#\e '#\x '#\t <whitespace+> m := <month-name>) (advance-year m 1))
+          (('#\t '#\h '#\i '#\s <whitespace+> d := <day-of-week>) (advance-day d))
+          (('#\t '#\h '#\i '#\s <whitespace+> m := <month-name>) (advance-year m 1))
           (('#\t '#\o '#\d '#\a '#\y) (create-date (date-year (*date-ref*)) (date-month (*date-ref*)) (date-day (*date-ref*))))
           (('#\t '#\o '#\m '#\o '#\r '#\r '#\o '#\w)
            (let ((tomorrow (date+ (*date-ref*) 1)))
@@ -115,14 +115,14 @@
 (define <date>
   (parse <date>
          (<date>
-          ((n := <day-of-week> <cws> m := <month-name> <cws> d := <day-number> <cws> y := <year>) (create-date y m d))
-          ((m := <month-name> <cws> d := <day-number> <cws> y := <year>) (create-date y m d))
-          ((n := <day-of-week> <cws> m := <month-name> <cws> d := <day-number>) (advance-year m d))
-          ((m := <month-name> <whitespace> d := <day-number>) (advance-year m d))
-          ((n := <day-of-week> <cws> d := <day-number> <cws> m := <month-name> <cws> y := <year>) (create-date y m d))
-          ((d := <day-number> <whitespace> m := <month-name> <cws> y := <year>) (create-date y m d))
-          ((n := <day-of-week> <cws> d := <day-number> <cws> m := <month-name>) (advance-year m d))
-          ((d := <day-number> <whitespace> m := <month-name>) (advance-year m d))
+          ((n := <day-of-week> <cws+> m := <month-name> <cws+> d := <day-number> <cws+> y := <year>) (create-date y m d))
+          ((m := <month-name> <cws+> d := <day-number> <cws+> y := <year>) (create-date y m d))
+          ((n := <day-of-week> <cws+> m := <month-name> <cws+> d := <day-number>) (advance-year m d))
+          ((m := <month-name> <whitespace+> d := <day-number>) (advance-year m d))
+          ((n := <day-of-week> <cws+> d := <day-number> <cws+> m := <month-name> <cws+> y := <year>) (create-date y m d))
+          ((d := <day-number> <whitespace+> m := <month-name> <cws+> y := <year>) (create-date y m d))
+          ((n := <day-of-week> <cws+> d := <day-number> <cws+> m := <month-name>) (advance-year m d))
+          ((d := <day-number> <whitespace+> m := <month-name>) (advance-year m d))
           ((d := <slash-date>) d)
           ((d := <dash-date>) d)
           ((d := <dot-date>) d))
@@ -142,11 +142,12 @@
           ((y := <2or4digit> '#\. m := <1or2digit> '#\. d := <1or2digit>) (create-date y m d)))
          (<dash-date>
           ((y := <2or4digit> '#\- m := <1or2digit> '#\- d := <1or2digit>) (create-date y m d)))
-         (<cws>  ; Comma whitespace
-          ((<whitespace> <cws>) #t)
-          (('#\, <cws>) #t)
-          ((<whitespace>) #t)
-          (('#\,) #t))))
+         (<cws+>  ; Comma whitespace
+          ((w := (? char-whitespace?) c := <cws*>) (string-append (string w) c))
+          (('#\, c := <cws*>) (string-append "," c)))
+         (<cws*>
+          ((c := <cws+>) c)
+          (() ""))))
 
 (module+ test
   (require test-engine/racket-tests)

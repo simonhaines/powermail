@@ -1,8 +1,11 @@
-#lang racket
+#lang racket/base
 (require
- srfi/1
+ racket/stream
+ racket/contract
+ racket/list
  (planet "dvanhorn/packrat/combinator.ss")
  (planet "dvanhorn/packrat/parser-struct.rkt"))
+
 (provide char-range->list
          char-in?
          chars->num
@@ -31,7 +34,7 @@
       (parser (lambda (results)
                 (results->result results (gensym)
                                  (lambda ()
-                                   ((fold-right
+                                   ((foldr
                                      (lambda (chr next)
                                        (parser (lambda (results)
                                                  ((packrat-check-base chr (lambda (_) next))
@@ -52,7 +55,7 @@
       (parser (lambda (results)
                 (results->result results (gensym)
                                  (lambda ()
-                                   ((fold
+                                   ((foldl
                                      (lambda (pair next)
                                        (if (null? next)
                                            (pair->parser pair)
@@ -66,3 +69,30 @@
 ; string and return the string if successfully parsed
 (define (string-list->parser str-list)
   (pair-list->parser (map (lambda (str) (cons str str)) str-list)))
+
+; A generator that collapses whitespace to a single '#\space token
+; and converts all other tokens to lower case
+(define (string/downcase-generator str)
+  (base-generator->results
+   (let ((idx (box 0))
+         (len (string-length str))
+         (pos (box (top-parse-position "<string>"))))
+     (lambda ()
+       (let ((current-idx (unbox idx))
+             (current-pos (unbox pos)))
+         (if (= current-idx len)
+             (values current-pos #f)
+             (let ((ch (string-ref str current-idx)))
+               (let skip ((next-idx (add1 current-idx))
+                          (next-pos (update-parse-position current-pos ch)))
+                 (if (or (= next-idx len)
+                         (not (char-blank? ch))
+                         (not (char-blank? (string-ref str next-idx))))
+                     (begin
+                       (set-box! idx next-idx)
+                       (set-box! pos next-pos)
+                       (values current-pos
+                               (cons (if (char-blank? ch) #\space
+                                         (char-downcase ch)) ch)))
+                     (skip (add1 next-idx)
+                           (update-parse-position next-pos (string-ref str next-idx))))))))))))

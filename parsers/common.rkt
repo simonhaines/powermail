@@ -9,7 +9,8 @@
  <4digit>
  <1or2digit>
  <2or4digit>
- <whitespace>)
+ <whitespace+>
+ <whitespace*>)
 
 (define <digit>
   (parse <digit>
@@ -43,10 +44,29 @@
           ((d := <2digit>) d)
           ((d := <4digit>) d))))
 
-(define <whitespace>
-  (parse <whitespace>
-         (<whitespace>
-          ((w := (? char-whitespace?) <whitespace>) #t)
-          ((w := (? char-whitespace?)) #t))))
+(define <whitespace+>
+  (parse <whitespace+>
+         (<whitespace+>
+          ((w := (? char-whitespace?) x := <whitespace*>) (string-append (string w) x)))))
 
+(define <whitespace*>
+  (parse <whitespace*>
+         (<whitespace*>
+          ((w := (? char-whitespace?) x := <whitespace*>) (string-append (string w) x))
+          (() ""))))
+
+(module+ test
+  (require test-engine/racket-tests)
+  
+  (define (parse-string parser str)
+    (parse-result-semantic-value (parser (packrat-string-results "<str>" str))))
+  
+  (check-expect (parse-string <whitespace+> "     ") "     ")
+  (check-expect (parse-string <whitespace+> "") #f)
+  (check-expect (parse-string <whitespace+> "test") #f)
+  (check-expect (parse-string <whitespace*> "     ") "     ")
+  (check-expect (parse-string <whitespace*> "") "")
+  (check-expect (parse-string <whitespace*> "test") "")
+  
+  (test))
 
