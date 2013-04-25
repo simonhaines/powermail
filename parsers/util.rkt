@@ -11,7 +11,9 @@
          chars->num
          pair->parser
          pair-list->parser
-         string-list->parser)
+         string-list->parser
+         
+         parse-all)
 
 (define (char-range->list low hi)
   (map integer->char (stream->list (in-range low hi))))
@@ -96,3 +98,18 @@
                                          (char-downcase ch)) ch)))
                      (skip (add1 next-idx)
                            (update-parse-position next-pos (string-ref str next-idx))))))))))))
+
+; TODO enclose in submodule
+(define (parse-all parser str)
+  (let* ([result (parser (packrat-string-results "<test>" str))]
+         [amount (or (and (parse-result-successful? result)
+                          (parse-position-column (parse-results-position (parse-result-next result))))
+                     0)]
+         [length (string-length str)])
+    (when (not (= amount length))
+      (error (format "unparsed: ~s" (substring str amount))))
+    (parse-result-semantic-value result)))
+
+(module test racket/base
+  (provide test)
+  (define test 'test))

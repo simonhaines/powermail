@@ -3,61 +3,61 @@
 (require
  (for-syntax racket/base)
  (planet dvanhorn/packrat)
+ "datetime.rkt"
  "common.rkt")
 
-(define <recipients>
-  (parse <recipients>
-         (<recipients>
+(define <subjects>
+  (parse <subjects>
+         (<subjects>
           (('#\m '#\e) 'self))))
 
 (define <reminder>
   (parse <reminder>
          (<reminder>
-          (('#\r '#\e '#\m '#\i '#\n '#\d <whitespace+> r := <recipients> <whitespace+> c := <content>) (list r c)))
-         (<content>
-          (('#\t '#\h '#\a '#\t <whitespace+> c := <raw-content>) c)
-          (('#\a '#\b '#\o '#\u '#\t <whitespace+> c := <raw-content>) c)
-          (('#\t '#\o <whitespace+> c := <raw-content>) c)
-          ((c := <raw-content>) c))
-         (<raw-content>  ; TODO don't replace words in quote phrases
-          (('#\m '#\y w := <space+> c := <raw-content*>) (string-append "your" w c))
-          (('#\m '#\e w := <space+> c := <raw-content*>) (string-append "you" w c))
-          (('#\i w := <space+> c := <raw-content*>) (string-append "you" w c))
-          ((c := <content-word> w := <space+> r := <raw-content>) (string-append c w r))
-          ((c := <content-word*>) c))
-         (<raw-content*>
-          ((c := <raw-content>) c)
+          (('#\r '#\e '#\m '#\i '#\n '#\d <whitespace+> r := <recipients+> c := <content-spec>) (cons r c)))
+         (<recipients+>
+          ((s := <subjects> <whitespace+>) s))
+         (<content-spec>
+          ((<prefix> c := <content/time>) c)
+          ((c := <content/time>) c))
+         (<prefix>
+          (('#\t '#\h '#\a '#\t <whitespace+>) #t)
+          (('#\a '#\b '#\o '#\u '#\t <whitespace+>) #t)
+          (('#\t '#\o <whitespace+>) #t))
+         (<content/time>
+          ((d := <datetime> <whitespace+> <prefix> c := <content+>) (list d c))
+          ((d := <datetime> <whitespace+> c := <content+>) (list d c))
+          ((c := <content+> w := <whitespace+> ct := <content/time>) (string-append c w ct)))
+         (<content+>
+          ((c := <content-word> c* := <content*>) (string-append c c*)))
+         (<content*>
+          ((c := <content+> c* := <content*>) (string-append c c*))
           (() ""))
-
          (<content-word>
-          ((c := <content-char> c* := <content-char*>) (string-append c c*)))
-         (<content-word*>
-          ((c := <content-word>) c)
-          (() ""))
+          (('#\m '#\y w := <whitespace*>) (string-append "your" w))
+          (('#\m '#\e w := <whitespace*>) (string-append "you" w))
+          (('#\i w := <whitespace*>) (string-append "you" w))
+          ((c := <content-char+> w := <whitespace*>) (string-append c w)))
+
          ; TODO use (char-general-category char) to create char sets
-         (<content-char>
-          ((c := (? char-alphabetic?)) (string c))
-          (('#\') "'"))
+         ; see: http://www.fileformat.info/info/unicode/category/index.htm
+         (<content-char+>
+          ((c := (? char-alphabetic?) c* := <content-char*>) (string-append (string c) c*)))
          (<content-char*>
-          ((c := <content-char> c* := <content-char*>) (string-append c c*))
-          (() ""))
-         (<space+>
-          ((s := (? (lambda (x) (not (char-alphabetic? x)))) s* := <space*>) (string-append (string s) s*)))
-         (<space*>
-          ((s := <space+>) s)
+          ((c := <content-char+> c* := <content-char*>) (string-append c c*))
           (() ""))))
 
+
 (module+ test
-  (require test-engine/racket-tests)
+  (require
+   test-engine/racket-tests
+   "util.rkt")
   
-  (define (parse-string parser str)
-    (parse-result-semantic-value (parser (packrat-string-results "<str>" str))))
-  
-  (check-expect (parse-string <reminder> "remind me to take out the trash") '(self "take out the trash"))
-  (check-expect (parse-string <reminder> "remind me when i need reminding") '(self "when you need reminding"))
-  (check-expect (parse-string <reminder> "remind me to take out my trash") '(self "take out your trash"))
-  (check-expect (parse-string <reminder> "remind me my cat's bowels need massaging") '(self "your cat's bowels need massaging"))
-  (check-expect (parse-string <reminder> "remind me that i think i read the 'end of days' is in december") '(self "you think you read the 'end of days' is in december"))
+  (check-expect (parse-all <reminder> "remind me tomorrow 5pm to take out my trash for me") '(self "take out your trash for you"))
+  (check-expect (parse-all <reminder> "remind me when i need reminding") '(self "when you need reminding"))
+  (check-expect (parse-all <reminder> "remind me to take out my trash") '(self "take out your trash"))
+  (check-expect (parse-all <reminder> "remind me my cat's bowels need massaging") '(self "your cat's bowels need massaging"))
+  (check-expect (parse-all <reminder> "remind me that i think i read the 'end of days' is in december") '(self "you think you read the 'end of days' is in december"))
   
   (test))
 

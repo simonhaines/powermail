@@ -8,6 +8,8 @@
  "common.rkt"
  "util.rkt"
  "locale.rkt")  ; Preferences
+(provide
+ <duration>)
 
 (define (create-datetime date time)
   (append date time))
@@ -23,7 +25,7 @@
 (define <duration-spec>
   (parse <duration-spec>
          (<duration-spec>
-          (('#\f '#\r '#\o '#\m <whitespace> d := <duration>) d)
+          (('#\f '#\r '#\o '#\m <whitespace+> d := <duration>) d)
           ((d := <duration>) d))))
 
 (define <duration>
@@ -37,25 +39,31 @@
           ((d := <date-spec> <comma-whitespace> t := <time-spec>) (append d t))
           ((t := <time-spec> <comma-whitespace> d := <date-spec>) (append d t)))
          (<date-time-duration>
-          ((d := <date-spec> <comma-whitespace> '#\f '#\r '#\o '#\m <whitespace> t := <time-duration>) (append d t))
+          ((d := <date-spec> <comma-whitespace> '#\f '#\r '#\o '#\m <whitespace+> t := <time-duration>) (append d t))
           ((d := <date-spec> <comma-whitespace> t := <time-duration>) (append d t))
           ((t := <time-duration> <comma-whitespace> d := <date-spec>) (append d t)))
          (<date-duration>
           ((n := <1or2digit> <duration-span> d := <date>) (append (take d 2) (list n)))
           ((d := <date-spec> <duration-span> <date-spec>) d))
          (<time-duration>
-          ((h := <1or2digit> <duration-span> t := <time>) (cons h (cdr t)))
-          ((t := <time-spec> <duration-span> <time-spec>) t))
+          ((t := <time-spec> <duration-span> <time-spec>) t)
+          ((h := <1or2digit> <duration-span> t := <time>)
+           (if (and (> (car t) 12)
+                    (< h 12)
+                    (< (+ h 12) (car t)))
+               (cons (+ 12 h) (cdr t))
+               (cons h (cdr t))))
+          ((t := <time> <duration-span> <1or2digit>) t))
          (<duration-span>
-          ((<opt-space> '#\- <opt-space>) #t)
-          ((<whitespace> '#\t '#\o <whitespace>) #t)
-          ((<whitespace> '#\u '#\n '#\t '#\i '#\l <whitespace>) #t))
+          ((<whitespace*> '#\- <whitespace*>) #t)
+          ((<whitespace+> '#\t '#\o <whitespace+>) #t)
+          ((<whitespace+> '#\u '#\n '#\t '#\i '#\l <whitespace+>) #t))
          (<comma-whitespace>
-          (('#\, <opt-space>) #t)
-          ((<whitespace> <opt-space>) #t))
-         (<opt-space>
-          ((<whitespace> <opt-space>) #t)
-          (() #t))))
+          ((w := <whitespace+> c := <comma-whitespace*>) (string-append w c))
+          (('#\, c := <comma-whitespace*>) (string-append "," c)))
+         (<comma-whitespace*>
+          ((c := <comma-whitespace>) c)
+          (() ""))))
 
 (module+ test
   (require test-engine/racket-tests)
