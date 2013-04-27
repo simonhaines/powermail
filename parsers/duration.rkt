@@ -2,7 +2,7 @@
 (require
  racket/list
  (planet dvanhorn/packrat)
- (planet bzlib/date/srfi)
+ (planet bzlib/date/plt)
  "date.rkt"
  "time.rkt"
  "common.rkt"

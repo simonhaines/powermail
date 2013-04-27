@@ -2,7 +2,7 @@
 (require
  (for-syntax racket/base)
  (planet dvanhorn/packrat)
- (planet bzlib/date/srfi)
+ (planet bzlib/date/plt)
  "common.rkt"
  "util.rkt"
  "locale.rkt")  ; Preferences

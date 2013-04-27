@@ -12,7 +12,6 @@
          pair->parser
          pair-list->parser
          string-list->parser
-         
          parse-all)
 
 (define (char-range->list low hi)
@@ -73,7 +72,7 @@
   (pair-list->parser (map (lambda (str) (cons str str)) str-list)))
 
 ; A generator that collapses whitespace to a single '#\space token
-; and converts all other tokens to lower case
+; and converts all other tokens to lower case retaining the character in the semantic value
 (define (string/downcase-generator str)
   (base-generator->results
    (let ((idx (box 0))

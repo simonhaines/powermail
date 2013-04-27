@@ -52,7 +52,7 @@
 (define <whitespace*>
   (parse <whitespace*>
          (<whitespace*>
-          ((w := (? char-whitespace?) x := <whitespace*>) (string-append (string w) x))
+          ((w := <whitespace+>) w)
           (() ""))))
 
 (module+ test

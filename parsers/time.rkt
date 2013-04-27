@@ -2,7 +2,7 @@
 (require
  racket/list
  (planet dvanhorn/packrat)
- (planet bzlib/date/srfi)
+ (planet bzlib/date/plt)
  (planet bzlib/date-tz)
  (planet bzlib/date-tz/util)
  "timezone.rkt"
@@ -28,25 +28,11 @@
   (let-values ([(q r) (quotient/remainder amount 100)])
     (* 60 (+ (* 60 q) r))))
 
-(define (advance-minutes m)
-  (let ([new-time (seconds->date (+ (* 60 m) (date->seconds (*date-ref*))))])
-    (create-time (date-hour new-time)
-                 (date-minute new-time))))
-
-(define (advance-hours h)
-  (let ([new-time (seconds->date (+ (* 3600 h) (date->seconds (*date-ref*))))])
-    (create-time (date-hour new-time)
-                 (date-minute new-time))))
-
 (define <time-spec>
   (parse <time-spec>
          (<time-spec>
           ((t := <time>) t)
-          (('#\a '#\t <whitespace+> t := <time>) t)
-          (('#\i '#\n <whitespace+> '#\1 <whitespace+> '#\m '#\i '#\n '#\u '#\t '#\e) (advance-minutes 1))
-          (('#\i '#\n <whitespace+> d := <1or2digit> <whitespace+> '#\m '#\i '#\n '#\u '#\t '#\e '#\s) (advance-minutes d))
-          (('#\i '#\n <whitespace+> '#\1 <whitespace+> '#\h '#\o '#\u '#\r) (advance-hours 1))
-          (('#\i '#\n <whitespace+> d := <1or2digit> <whitespace+> '#\h '#\o '#\u '#\r '#\s) (advance-hours d)))))
+          (('#\a '#\t <whitespace+> t := <time>) t))))
 
 (define <time>
   (parse <time>
