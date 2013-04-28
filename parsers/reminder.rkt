@@ -43,19 +43,23 @@
           (('#\a '#\b '#\o '#\u '#\t <whitespace+>) #t)
           (('#\t '#\o <whitespace+>) #t))
          (<content/time>
-          ((d := <datetime-spec> <whitespace+> <prefix> c := <content+>) (list d c))
+          ((d := <datetime-spec> <whitespace+> <prefix> c := <content+>) (list d c))  ; TODO comma after datetime?
           ((d := <datetime-spec> <whitespace+> c := <content+>) (list d c))
-          ((c := <content+> w := <whitespace+> ct := <content/time>) (string-append c w ct)))
+          ((c := <content+> w := <whitespace+> ct := <content/time>) (string-append c w ct))
+          ((c := <content+> d := <datetime-spec>) (list d c)))
          (<content+>
-          ((c := <content-word> c* := <content*>) (string-append c c*)))
+          ((c := <content-word> c* := <content*>) (if c* (string-append c " " c*) c)))
          (<content*>
           ((c := <content+>) c)
-          (() ""))
+          (() #f))
          (<content-word>
-          (('#\m '#\y w := <whitespace*>) (string-append "your" w))
-          (('#\m '#\e w := <whitespace*>) (string-append "you" w))
-          (('#\i w := <whitespace*>) (string-append "you" w))
-          ((c := <content-first-char> c* := <content-char*> w := <whitespace*>) (string-append c c* w)))
+          (('#\m '#\y <whitespace*>) "your")
+          (('#\m '#\e <whitespace*>) "you")
+          (('#\i <whitespace*>) "you")
+          ((c := <content-first-char> c* := <content-char*> <whitespace*>) (string-append c c*)))
+         (<content-word-boundary>  ; TODO generator needs an 'eof token
+          ((w := <whitespace+>) w)
+          ((t := (? tag-identifier?)) t))
          
          ; TODO use (char-general-category char) to create char sets
          ; see: http://www.fileformat.info/info/unicode/category/index.htm
@@ -92,6 +96,8 @@
                   (self) "When you need reminding" (2013 5 2 9) ("reminder")) 
   (check-date-ref (2013 4 28 12 44) <reminder> "remind me at 5pm my cat's bowels need massaging #ick, #kill-the-cat"
                   (self) "Your cat's bowels need massaging" (2013 4 28 17) ("ick" "kill-the-cat"))
+  (check-date-ref (2013 4 28 12 44) <reminder> "remind me at 5pm myopia degrades intelligence"
+                  (self) "Myopia degrades intelligence" (2013 4 28 17) ())
   (check-date-ref (2013 4 28) <reminder> "remind me that i think i need to read 'watership down' tomorrow"
                   (self) "You think you need to read 'watership down'" (2013 4 29 9) ())
   (check-date-ref (2013 4 28) <reminder> "remind me that the 'end of days' is in december tomorrow"
