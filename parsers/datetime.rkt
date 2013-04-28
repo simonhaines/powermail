@@ -1,8 +1,9 @@
 #lang racket/base
 (require
  (for-syntax racket/base)
- racket/date
  (planet dvanhorn/packrat)
+ racket/date
+ (planet bzlib/date-tz/plt)
  "date.rkt"
  "time.rkt"
  "duration.rkt"
@@ -12,17 +13,22 @@
  <datetime-spec>
  <datetime>)
 
+; Fold the list structures produced by the <date> and <time> parsers
+; into a Racket date structure
 (define (date->datetime date)
-  (append date (append (*time-ref*) (list (*tz*)))))
+  (let ([time (*time-ref*)])
+    (build-date/tz (list-ref date 0) (list-ref date 1) (list-ref date 2)
+                   (list-ref time 0) (list-ref time 1) #:tz (*tz*))))
 (define (time->datetime time)
-  (let ([date-ref (*date-ref*)])
-    (append (list (date-year date-ref)
-                  (date-month date-ref)
-                  (date-day date-ref))
-            time)))
+  (let ([date (*date-ref*)])
+    (build-date/tz (date-year date) (date-month date) (date-day date)
+                   (list-ref time 0) (list-ref time 1) #:tz (*tz*))))
 (define (date-time->datetime date time)
-  (append date time))
-(define (datetime->datetime dt) dt)
+  (build-date/tz (list-ref date 0) (list-ref date 1) (list-ref date 2)
+                 (list-ref time 0) (list-ref time 1) #:tz (*tz*)))
+(define (datetime->datetime dt)
+  (build-date/tz (list-ref dt 0) (list-ref dt 1) (list-ref dt 2)
+                 (list-ref dt 3) (list-ref dt 4) #:tz (list-ref dt 5)))
 
 (define (advance-minutes m)
   (let ([new-time (seconds->date (+ (* 60 m) (date->seconds (*date-ref*))))])
@@ -92,6 +98,7 @@
   (check-date-ref (2013 4 27 10) <datetime-spec> "5pm-9pm" (2013 4 27 17 0))
   (check-date-ref (2013 4 27 17) <datetime-spec> "5pm-9" (2013 4 27 17 0))
   (check-date-ref (2013 4 27 10) <datetime-spec> "5am-9pm" (2013 4 27 5 0))
+  (check-date-ref (2013 4 28) <datetime-spec> "28/4, 10am" (2013 4 28 10 0))
   
   (test))
 

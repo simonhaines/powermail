@@ -3,7 +3,7 @@
  racket/list
  (planet dvanhorn/packrat)
  (planet bzlib/date/plt)
- (planet bzlib/date-tz)
+ (planet bzlib/date-tz/plt)
  (planet bzlib/date-tz/util)
  "timezone.rkt"
  "common.rkt"
