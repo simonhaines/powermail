@@ -3,7 +3,7 @@
  racket/stream
  racket/contract
  racket/list
- (planet "dvanhorn/packrat/combinator.ss")
+ (planet dvanhorn/packrat)
  (planet "dvanhorn/packrat/parser-struct.rkt"))
 
 (provide char-range->list
@@ -12,7 +12,8 @@
          pair->parser
          pair-list->parser
          string-list->parser
-         parse-all)
+         parse-all
+         terminal?)
 
 (define (char-range->list low hi)
   (map integer->char (stream->list (in-range low hi))))
@@ -73,34 +74,42 @@
 
 ; A generator that collapses whitespace to a single '#\space token
 ; and converts all other tokens to lower case retaining the character in the semantic value
+(define (terminal? c)
+  (char=? c #\034))
+
 (define (string/downcase-generator str)
   (base-generator->results
-   (let ((idx (box 0))
-         (len (string-length str))
-         (pos (box (top-parse-position "<string>"))))
+   (let ((len (string-length str))
+         (idx (box 0))
+         (pos (box (top-parse-position "<string>")))
+         (eof (box #f)))
      (lambda ()
        (let ((current-idx (unbox idx))
              (current-pos (unbox pos)))
-         (if (= current-idx len)
-             (values current-pos #f)
-             (let ((ch (string-ref str current-idx)))
-               (let skip ((next-idx (add1 current-idx))
-                          (next-pos (update-parse-position current-pos ch)))
-                 (if (or (= next-idx len)
-                         (not (char-blank? ch))
-                         (not (char-blank? (string-ref str next-idx))))
-                     (begin
-                       (set-box! idx next-idx)
-                       (set-box! pos next-pos)
-                       (values current-pos
-                               (cons (if (char-blank? ch) #\space
-                                         (char-downcase ch)) ch)))
-                     (skip (add1 next-idx)
-                           (update-parse-position next-pos (string-ref str next-idx))))))))))))
+         (cond [(unbox eof)
+                (values current-pos #f)]
+               [(= current-idx len)
+                (set-box! eof #t)
+                (values current-pos (cons #\034 #\034))] ; Terminal: 034 = ASCII 'file separator'
+               [else 
+                (let ((ch (string-ref str current-idx)))
+                  (let skip ((next-idx (add1 current-idx))
+                             (next-pos (update-parse-position current-pos ch)))
+                    (if (or (= next-idx len)
+                            (not (char-blank? ch))
+                            (not (char-blank? (string-ref str next-idx))))
+                        (begin
+                          (set-box! idx next-idx)
+                          (set-box! pos next-pos)
+                          (values current-pos
+                                  (cons (if (char-blank? ch) #\space
+                                            (char-downcase ch)) ch)))
+                        (skip (add1 next-idx)
+                              (update-parse-position next-pos (string-ref str next-idx))))))]))))))
 
 ; TODO enclose in submodule
 (define (parse-all parser str)
-  (let* ([result (parser (packrat-string-results "<test>" str))]
+  (let* ([result (parser (string/downcase-generator str))]
          [amount (or (and (parse-result-successful? result)
                           (parse-position-column (parse-results-position (parse-result-next result))))
                      0)]

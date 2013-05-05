@@ -2,7 +2,8 @@
 (require 
  racket/list
  (planet dvanhorn/packrat:2:3)
- "common.rkt")
+ "common.rkt"
+ "util.rkt")
 
 (provide
  tag-identifier?
@@ -23,6 +24,7 @@
           (() ""))
          (<tag-char>
           ((c := (? (lambda (x) (not (or (char-whitespace? x)
+                                         (terminal? x)
                                          (char=? x #\,)))))) c))))
 
 ; A tag list is a tag followed by an optional comma then a space

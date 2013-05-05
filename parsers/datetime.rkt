@@ -2,7 +2,7 @@
 (require
  (for-syntax racket/base)
  (planet dvanhorn/packrat)
- racket/date
+ (planet bzlib/date/plt)
  (planet bzlib/date-tz/plt)
  "date.rkt"
  "time.rkt"
@@ -77,7 +77,6 @@
 (module+ test
   (require
    (planet bzlib/date/plt)
-   (planet bzlib/date-tz/plt)
    test-engine/racket-tests
    "util.rkt")
   

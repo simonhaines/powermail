@@ -10,7 +10,8 @@
  <1or2digit>
  <2or4digit>
  <whitespace+>
- <whitespace*>)
+ <whitespace*>
+ <terminal>)
 
 (define <digit>
   (parse <digit>
@@ -54,6 +55,12 @@
          (<whitespace*>
           ((w := <whitespace+>) w)
           (() ""))))
+
+; The terminal chaaracter is emitted by the string/downcase-generator
+(define <terminal>
+  (parse <terminal>
+         (<terminal>
+          ((t := (? terminal?)) ""))))
 
 (module+ test
   (require test-engine/racket-tests)

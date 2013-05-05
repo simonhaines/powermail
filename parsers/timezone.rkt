@@ -1,7 +1,7 @@
 #lang racket/base
 (require
  racket/string
- (planet bzlib/date-tz)
+ (planet bzlib/date-tz/plt)
  "util.rkt")
 
 (provide <timezone>
