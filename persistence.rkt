@@ -13,6 +13,7 @@
 (struct user (id date-format tz time-ref)
   #:transparent)
 
+; Returns either a user or false
 (define (lookup-user email)
   (let ([result (query-maybe-row conn
                                  (string-append
@@ -25,4 +26,4 @@
               (vector-ref result 2)
               (let-values ([(hour minute) (quotient/remainder (vector-ref result 3) 100)])
                 (list hour minute)))
-        null)))
+        #f)))

@@ -14,10 +14,10 @@
        [sender (extract-addresses (cdr (assoc "From" headers)) 'address)]
        [user (lookup-user sender)])
   ; If the sender is not a user, don't do any further processing
-  (when (not (null? user))
-    (parameterize ([*date-fmt* (user-date-format)]
-                   [*tz* (user-tz)]
-                   [*date-ref* (date->tz (current-date) (user-tz))]
-                   [*time-ref* (user-time-ref)])
+  (when user)
+    (parameterize ([*date-fmt* (user-date-format user)]
+                   [*tz* (user-tz user)]
+                   [*date-ref* (date->tz (current-date) (user-tz user))]
+                   [*time-ref* (user-time-ref user)])
       ; TODO lookup contacts
       '())))
