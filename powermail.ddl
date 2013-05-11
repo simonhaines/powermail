@@ -2,7 +2,7 @@ CREATE TABLE Users
   (Id CHAR(32) NOT NULL,
    DateFormat CHAR(3) NOT NULL,
    Timezone VARCHAR(32) NOT NULL,
-   TimeRef TIME NOT NULL,
+   TimeRef INTEGER NOT NULL,
    PRIMARY KEY (Id));
 
 CREATE TABLE Contacts

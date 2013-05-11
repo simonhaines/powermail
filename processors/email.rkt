@@ -1,7 +1,12 @@
 #lang racket/base
 (require
+ racket/list
  net/mime
- "parsers/locale.rkt")
+ net/head
+ (planet bzlib/date/plt)
+ (planet bzlib/date-tz)
+ "../persistence.rkt"
+ "../parsers/locale.rkt")
 
 ; Analyse the email message on stdin and lookup the sender
 (let* ([msg (mime-analyze (current-input-port))]
@@ -12,5 +17,7 @@
   (when (not (null? user))
     (parameterize ([*date-fmt* (user-date-format)]
                    [*tz* (user-tz)]
-                   [*date-ref* (date->tz (current-date) (*tz*))]uuid
-  ; TODO resolve user's contacts
+                   [*date-ref* (date->tz (current-date) (user-tz))]
+                   [*time-ref* (user-time-ref)])
+      ; TODO lookup contacts
+      '())))
