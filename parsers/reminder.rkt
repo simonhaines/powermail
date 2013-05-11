@@ -10,7 +10,7 @@
  "util.rkt")
 (provide
  <reminder>
- event)
+ (struct-out event))
 
 (define <subjects>
   (parse <subjects>
@@ -18,7 +18,7 @@
           (('#\m '#\e) '(self)))))
 
 ; Trim spaces start and end and title case first character
-(define (prepare-content content)
+(define (format-content content)
   (let ([content-list (string->list (string-trim content))])
     (list->string (cons (char-titlecase (car content-list))
                         (cdr content-list)))))
@@ -30,7 +30,7 @@
   (parse <reminder>
          (<reminder>
           (('#\r '#\e '#\m '#\i '#\n '#\d <whitespace+> r := <recipients+> c := <content-spec> <whitespace*> t := <tag-list*>)
-           (event r (prepare-content (cadr c)) (car c) t)))
+           (event r (format-content (cadr c)) (car c) t)))
          (<recipients+>
           ((s := <subjects> <whitespace+>) s))
          (<content-spec>
@@ -74,7 +74,6 @@
 
 (module+ test
   (require
-   ;racket/date
    (planet bzlib/date-tz/plt)
    "locale.rkt"
    "util.rkt"
