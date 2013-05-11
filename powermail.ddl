@@ -28,6 +28,7 @@ CREATE TABLE Events
    Owner CHAR(32) NOT NULL,
    TimeUTC DATETIME NOT NULL,
    Content TEXT NOT NULL,
+   Context TEXT NOT NULL,
    PRIMARY KEY (Id),
    FOREIGN KEY (Owner) REFERENCES Users (Id));
 
