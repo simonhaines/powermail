@@ -13,7 +13,8 @@
          pair-list->parser
          string-list->parser
          parse-all
-         terminal?)
+         terminal?
+         string/downcase-generator)
 
 (define (char-range->list low hi)
   (map integer->char (stream->list (in-range low hi))))
@@ -91,6 +92,25 @@
                [(= current-idx len)
                 (set-box! eof #t)
                 (values current-pos (cons #\034 #\034))] ; Terminal: 034 = ASCII 'file separator'
+               
+               ; \r\n  TODO refactor/combine to handle just \n
+               [(and (char=? (string-ref str current-idx) #\return)
+                     (<= (add1 current-idx) len)
+                     (char=? (string-ref str (add1 current-idx)) #\newline))
+                (let* ([new-pos (update-parse-position current-pos (string-ref str current-idx))]
+                       [new-pos (update-parse-position current-pos (string-ref str (add1 current-idx)))]
+                       [new-idx (+ 2 current-idx)])
+                  (set-box! pos new-pos)
+                  (set-box! idx new-idx)
+                  (values current-pos (cons #\034 #\034)))]
+               [(char=? (string-ref str current-idx) #\newline)
+                (let* ([new-pos (update-parse-position current-pos (string-ref str current-idx))]
+                       [new-idx (add1 current-idx)])
+                  (set-box! pos new-pos)
+                  (set-box! idx new-idx)
+                  (values current-pos (cons #\034 #\034)))]
+               
+               
                [else 
                 (let ((ch (string-ref str current-idx)))
                   (let skip ((next-idx (add1 current-idx))
@@ -112,7 +132,8 @@
   (let* ([result (parser (string/downcase-generator str))]
          [amount (or (and (parse-result-successful? result)
                           (parse-position-column (parse-results-position (parse-result-next result))))
-                     0)]
+                     (or (parse-position-column (parse-error-position (parse-result-error result)))
+                         0))]
          [length (string-length str)])
     (when (not (= amount length))
       (error (format "unparsed: ~s" (substring str amount))))

@@ -60,7 +60,7 @@
 (define <terminal>
   (parse <terminal>
          (<terminal>
-          ((t := (? terminal?)) ""))))
+          ((t := (? terminal?)) #t))))
 
 (module+ test
   (require test-engine/racket-tests)

@@ -1,7 +1,12 @@
 #lang racket
-(require (planet dvanhorn/packrat:2:3)
-         "util.rkt")
-(provide <addr-spec>)
+(require
+ (planet dvanhorn/packrat:2:3)
+ "reminder.rkt"
+ "common.rkt"
+ "util.rkt")
+(provide
+ <addr-spec>
+ <message-body>)
 
 ; RFC2822 s3.4.1
 (define <addr-spec>
@@ -30,3 +35,10 @@
 
 ; TODO quoted pairs for local-part and domain
 ;      address lists
+
+(define <message-body>
+  (parse <message-body>
+         (<message-body>
+          ((<whitespace*> r := <reminder> m := <message-body>) (cons r m))
+          ((<whitespace*> <terminal> m := <message-body>) m)
+          (() '()))))

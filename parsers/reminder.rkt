@@ -45,9 +45,9 @@
           (('#\t '#\o <whitespace+>) #t))
          (<datetime>
           ((d := <datetime-spec> <word-boundary> <prefix>) d)
-          ((d := <datetime-spec> <word-boundary>) d))
+          ((d := <datetime-spec> <punctuation*> <word-boundary>) d))
          (<content>
-          ((d := <datetime> c := <words>) (list d c))
+          ((d := <datetime> c := <words>) (list d c)) ; TODO punctuation afer datetime
           ((c := <word> c+ := <content>) (list (car c+) (string-append c (cadr c+)))))
          (<word>
           (('#\m '#\y w := <word-boundary>) (string-append "your" w))
@@ -59,7 +59,10 @@
           (() ""))
          (<word-boundary>
           ((w := <whitespace+>) w)
-          ((t := <terminal>) t))
+          ((<terminal>) ""))
+         (<punctuation*>
+          ((p := (? char-punctuation?)) p)
+          (() ""))
          (<content-first-char>
           ((c := (? (lambda (c) (not (or (char-whitespace? c)
                                          (terminal? c)
@@ -103,5 +106,11 @@
                   (self) "Myopia degrades intelligence" (2013 4 28 17) ())
   (check-date-ref (2013 4 28 12 55) <reminder> "remind me to ensure PLT dates in 10 minutes instead of SRFI dates"
                   (self) "Ensure PLT dates instead of SRFI dates" (2013 4 28 13 5) ())
+  (check-date-ref (2013 5 18 13 00) <reminder> "remind me today at 5pm to ensure dates work OK"
+                  (self) "Ensure dates work OK" (2013 5 18 17 00) ())
+  (check-date-ref (2013 5 18 18 00) <reminder> "remind me today at 5pm to ensure dates work OK with trailing punctuation."
+                  (self) "Ensure dates work OK with trailing punctuation." (2013 5 18 17 00) ())
+  (check-date-ref (2013 5 18 18 00) <reminder> "remind me to ensure parsing with punctuation after trailing times today at 5pm."
+                  (self) "Ensure parsing with punctuation after trailing times" (2013 5 18 17 00) ())
   (test))
 
