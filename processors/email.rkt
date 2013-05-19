@@ -34,8 +34,8 @@
                 (if (> (length events) 0)
                     (begin
                       (displayln "success")
-                      (write body)
-                      (write events))
+                      (write events)
+                      (write-events! user events))
                     (begin
                       (displayln "parse success, no events"))))
               (let ([err (parse-result-error result)])

@@ -52,3 +52,13 @@ CREATE TABLE EventTags
    PRIMARY KEY (Event, Tag),
    FOREIGN KEY (Event) REFERENCES Events (Id),
    FOREIGN KEY (Tag) REFERENCES Tags (Id));
+
+CREATE TABLE Records
+  (Owner CHAR(32) NOT NULL,
+   Number INTEGER NOT NULL,
+   Action CHAR(3) NOT NULL,
+   Event CHAR(32) NULL,
+   Contact CHAR(32) NULL,
+   PRIMARY KEY (Owner, Number),
+   FOREIGN KEY (Event) REFERENCES Events (Id),
+   FOREIGN KEY (Contact) REFERENCES Contacts (Id));
