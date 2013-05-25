@@ -23,7 +23,7 @@ CREATE TABLE Associates
    FOREIGN KEY (Owner) REFERENCES Users (Id),
    FOREIGN KEY (Contact) REFERENCES Contacts (Id));
 
-CREATE TABLE Events
+CREATE TABLE Reminders
   (Id CHAR(32) NOT NULL,
    Owner CHAR(32) NOT NULL,
    TimeUTC DATETIME NOT NULL,

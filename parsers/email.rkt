@@ -6,7 +6,10 @@
  "util.rkt")
 (provide
  <addr-spec>
- <message-body>)
+ <message-body>
+ (struct-out command))
+
+(struct command (action start end) #:transparent)
 
 ; RFC2822 s3.4.1
 (define <addr-spec>
@@ -39,6 +42,8 @@
 (define <message-body>
   (parse <message-body>
          (<message-body>
-          ((<whitespace*> r := <reminder> m := <message-body>) (cons r m))
+          ((<whitespace*> s := <pos> r := <reminder> e := <pos> m := <message-body>) (cons (command r s e) m))
           ((<whitespace*> <terminal> m := <message-body>) m)
-          (() '()))))
+          (() '()))
+         (<pos>
+          ((p := @) (parse-position-column p)))))

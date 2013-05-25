@@ -1,38 +1,42 @@
 #lang racket/base
 (require
- db
- racket/date
- (planet williams/uuid/uuid)
- (planet bzlib/date-tz/plt)
- "parsers/reminder.rkt")
+ (for-syntax racket/base)
+ racket/vector
+ db)
 
-(provide 
- lookup-user
- (struct-out user)
- write-events!)
+(provide
+ fetch-row
+ fetch-rows)
 
 ; The non-pooled connection
 (define conn (virtual-connection (lambda () (sqlite3-connect #:database "powermail.db"))))
 
-(struct user (id date-format tz time-ref)
-  #:transparent)
+(define-syntax (fetch-rows stx)
+  (syntax-case stx ()
+    [(fetch-rows (stmt ...) thunk)
+     #'(let ([result (query-rows conn stmt ...)])
+         (if (null? result) null
+             (map thunk result)))]
+    [(fetch-rows stmt thunk)
+     #'(let ([result (query-rows conn stmt)])
+         (if (null? result) null
+             (map thunk result)))]))
 
-; Returns either a user or false
-(define (lookup-user email)
-  (let ([result (query-maybe-row conn
-                                 (string-append
-                                  "SELECT Users.Id, Users.DateFormat, Users.Timezone, Users.TimeRef "
-                                  "FROM Users INNER JOIN Contacts ON Contacts.Owner = Users.Id "
-                                  "WHERE Contacts.Email = $1") email)])
-    (if result
-        (user (vector-ref result 0)
-              (string->symbol (vector-ref result 1))
-              (vector-ref result 2)
-              (let-values ([(hour minute) (quotient/remainder (vector-ref result 3) 100)])
-                (list hour minute)))
-        #f)))
+(define-syntax (fetch-row stx)
+  (syntax-case stx ()
+    [(fetch-row (stmt ...) thunk)
+     #'(let ([result (query-maybe-row conn stmt ...)])
+         (if result (thunk result) #f))]
+    [(fetch-row stmt thunk)
+     #'(let ([result (query-maybe-row conn stmt)])
+         (if result (thunk result) #f))]))
 
-(define (write-events! user events)
+
+
+
+
+
+#;(define (write-events! user events)
   (start-transaction conn)
   (clear-records user)
   (for ([event events])
@@ -55,7 +59,7 @@
       (record-add-event (user-id user) event-id)))
   (commit-transaction conn))
 
-(define (tag->id tag)
+#;(define (tag->id tag)
   (let ([result (query-maybe-row conn "SELECT Id FROM Tags WHERE Name = $1" tag)])
     (if result
         (vector-ref result 0)
@@ -63,11 +67,11 @@
           (query-exec conn "INSERT INTO Tags (Id, Name) VALUES ($1, $2)" id tag)
           id))))
 
-(define (clear-records user)
+#;(define (clear-records user)
   (query-exec conn "DELETE FROM Records WHERE Owner = $1" (user-id user)))
 
-(define record-index (box 1))
-(define (record-add-event user-id event-id)
+#;(define record-index (box 1))
+#;(define (record-add-event user-id event-id)
   (let ([index (unbox record-index)])
     (query-exec conn
                 "INSERT INTO Records (Owner, Number, Action, Event) VALUES ($1, $2, 'ADD', $3)"

@@ -8,9 +8,9 @@
  "tag.rkt"
  "common.rkt"
  "util.rkt")
+
 (provide
- <reminder>
- (struct-out event))
+ <reminder>)
 
 (define <subjects>
   (parse <subjects>
@@ -23,14 +23,11 @@
     (list->string (cons (char-titlecase (car content-list))
                         (cdr content-list)))))
 
-(struct event (recipients content time tags)
-  #:transparent)
-
 (define <reminder>
   (parse <reminder>
          (<reminder>
           (('#\r '#\e '#\m '#\i '#\n '#\d <whitespace+> r := <recipients+> c := <content-spec> <whitespace*> t := <tag-list*>)
-           (event r (format-content (cadr c)) (car c) t)))
+           (list r (format-content (cadr c)) (car c) t)))
          (<recipients+>
           ((s := <subjects> <whitespace+>) s))
          (<content-spec>
@@ -88,7 +85,7 @@
        #'(check-expect
           (parameterize ((*date-ref* (build-date/tz date* ... #:tz (*tz*))))
             (parse-all parser str))
-          (event '(recipient ...) content (build-date/tz expected-date* ... #:tz (*tz*)) '(tag ...))))))
+          (list '(recipient ...) content (build-date/tz expected-date* ... #:tz (*tz*)) '(tag ...))))))
   
   (check-date-ref (2013 4 28 11 40) <reminder> "remind me in 20 minutes to take out the trash #todo #garbage"
                   (self) "Take out the trash" (2013 4 28 12) ("todo" "garbage"))
