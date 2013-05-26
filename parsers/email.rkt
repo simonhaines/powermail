@@ -3,13 +3,14 @@
  (planet dvanhorn/packrat:2:3)
  "reminder.rkt"
  "common.rkt"
- "util.rkt")
+ "util.rkt"
+ "../transaction.rkt"
+ "../template.rkt")
+
 (provide
  <addr-spec>
  <message-body>
- (struct-out command))
-
-(struct command (action start end) #:transparent)
+ parse-message)
 
 ; RFC2822 s3.4.1
 (define <addr-spec>
@@ -39,10 +40,11 @@
 ; TODO quoted pairs for local-part and domain
 ;      address lists
 
+
 (define <message-body>
   (parse <message-body>
          (<message-body>
-          ((<whitespace*> s := <pos> r := <reminder> e := <pos> m := <message-body>) (cons (command r s e) m))
+          ((<whitespace*> s := <pos> r := <reminder> e := <pos> m := <message-body>) (cons s e r))
           ((<whitespace*> <terminal> m := <message-body>) m)
           (() '()))
          (<pos>

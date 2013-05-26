@@ -78,6 +78,12 @@
 (define (terminal? c)
   (char=? c #\034))
 
+(define (update-position pos ch)
+  (let ([file (parse-position-file pos)]
+        [line (parse-position-line pos)]
+        [column (parse-position-column pos)])
+    (make-parse-position file line (add1 column))))
+
 (define (string/downcase-generator str)
   (base-generator->results
    (let ((len (string-length str))
@@ -97,14 +103,14 @@
                [(and (char=? (string-ref str current-idx) #\return)
                      (<= (add1 current-idx) len)
                      (char=? (string-ref str (add1 current-idx)) #\newline))
-                (let* ([new-pos (update-parse-position current-pos (string-ref str current-idx))]
-                       [new-pos (update-parse-position current-pos (string-ref str (add1 current-idx)))]
+                (let* ([new-pos (update-position current-pos (string-ref str current-idx))]
+                       [new-pos (update-position current-pos (string-ref str (add1 current-idx)))]
                        [new-idx (+ 2 current-idx)])
                   (set-box! pos new-pos)
                   (set-box! idx new-idx)
                   (values current-pos (cons #\034 #\034)))]
                [(char=? (string-ref str current-idx) #\newline)
-                (let* ([new-pos (update-parse-position current-pos (string-ref str current-idx))]
+                (let* ([new-pos (update-position current-pos (string-ref str current-idx))]
                        [new-idx (add1 current-idx)])
                   (set-box! pos new-pos)
                   (set-box! idx new-idx)

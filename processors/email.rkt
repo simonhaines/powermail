@@ -9,7 +9,9 @@
  "../persistence.rkt"
  "../parsers/email.rkt"
  "../parsers/locale.rkt"
- "../parsers/util.rkt")
+ "../parsers/util.rkt"
+ "../user.rkt"
+ "../transaction.rkt")
 
 ; Analyse the email message on stdin and lookup the sender
 (let* ([msg (mime-analyze (current-input-port))]
@@ -30,12 +32,12 @@
                [generator (string/downcase-generator body)]
                [result (<message-body> generator)])
           (if (parse-result-successful? result)
-              (let ([events (parse-result-semantic-value result)])
+              (let ([items (parse-result-semantic-value result)]
+                    [tx (create-transaction user)])
                 (if (> (length events) 0)
-                    (begin
-                      (displayln "success")
-                      (write events)
-                      (write-events! user events))
+                    (for-each (lambda (event)
+                                (template (add-record! tx event)))
+                              events)
                     (begin
                       (displayln "parse success, no events"))))
               (let ([err (parse-result-error result)])

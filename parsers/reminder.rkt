@@ -7,7 +7,8 @@
  "datetime.rkt"
  "tag.rkt"
  "common.rkt"
- "util.rkt")
+ "util.rkt"
+ "../reminder.rkt")
 
 (provide
  <reminder>)
@@ -27,7 +28,7 @@
   (parse <reminder>
          (<reminder>
           (('#\r '#\e '#\m '#\i '#\n '#\d <whitespace+> r := <recipients+> c := <content-spec> <whitespace*> t := <tag-list*>)
-           (list r (format-content (cadr c)) (car c) t)))
+           (create-reminder r (format-content (cadr c)) (car c) t)))
          (<recipients+>
           ((s := <subjects> <whitespace+>) s))
          (<content-spec>

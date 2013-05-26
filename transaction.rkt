@@ -1,15 +1,15 @@
 #lang racket/base
 (require
  "user.rkt"
- (prefix-in reminder: "reminder.rkt")  ; TODO do better
+ "reminder.rkt"
  (prefix-in db: "persistence.rkt"))
 
 (provide
- create
- add!
- delete!
- ; rollback!
- ; commit)
+ create-transaction
+ add-action!
+ delete-action!
+ ; rollback-action!
+ ; commit-transaction)
  )
 
 (struct transaction
@@ -17,22 +17,22 @@
 (struct record
   (action reminder contact (rolled-back #:mutable #:auto)))
 
-(define (create user)
+(define (create-transaction user)
   (transaction user (last-transaction (user-id user)) '()))
 
-(define (add! transaction . items)
+(define (add-action! transaction . items)
   (map (lambda (item)
          (append-transaction transaction (create-record 'add item))
          (cons (length (transaction-next transaction)) item))
        items))
 
-(define (delete! transaction . items)
+(define (delete-action! transaction . items)
   (map (lambda (item)
          (append-transaction transaction (create-record 'del item))
          (cons (length (transaction-next transaction)) item))
        items))
 
-(define (rollback! transaction . indeces)
+(define (rollback-record! transaction . indeces)
   (map (lambda (index)
          (let ([record (list-ref (transaction-last transaction) index)])
            (append-transaction transaction (rollback-record record))))
@@ -45,7 +45,7 @@
 
 (define (create-record type item)
   (cond
-    [(reminder:reminder? item) (record type (reminder:reminder-id item))]
+    [(reminder? item) (record type (reminder-id item))]
     [else (error "unknown type")]))
 
 (define (rollback-record record)
