@@ -9,7 +9,7 @@
  email-template)
 
 (define (email-template from)
-   (lambda (template context record)
+   (lambda (template context item records)
     (let ([index (car record)]
           [action (cdr record)])
       (match action

@@ -45,7 +45,7 @@
 
 (define (create-record type item)
   (cond
-    [(reminder? item) (record type (reminder-id item))]
+    [(reminder? item) (record type (reminder-id item) null)]
     [else (error "unknown type")]))
 
 (define (rollback-record record)

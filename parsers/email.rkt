@@ -9,8 +9,7 @@
 
 (provide
  <addr-spec>
- <message-body>
- parse-message)
+ <message-body>)
 
 ; RFC2822 s3.4.1
 (define <addr-spec>
@@ -44,7 +43,7 @@
 (define <message-body>
   (parse <message-body>
          (<message-body>
-          ((<whitespace*> s := <pos> r := <reminder> e := <pos> m := <message-body>) (cons s e r))
+          ((<whitespace*> s := <pos> r := <reminder> e := <pos> m := <message-body>) (cons (list s e r) m))
           ((<whitespace*> <terminal> m := <message-body>) m)
           (() '()))
          (<pos>
