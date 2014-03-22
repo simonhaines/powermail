@@ -1,0 +1,1 @@
+([:dependencies ([org.clojure/clojure "1.5.1"] [org.bmillare/dj.peg "0.3.0"] [clj-time/clj-time "0.6.0"] [javax.mail/mail "1.4"] [org.clojure/tools.nrepl "0.2.3" :exclusions ([org.clojure/clojure])] [clojure-complete/clojure-complete "0.2.3" :exclusions ([org.clojure/clojure])])])
