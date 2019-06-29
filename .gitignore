@@ -1,4 +1,4 @@
+compiled/
 *~
-**compiled/
-**.swp
-**.db
+*.swp
+*.db

@@ -29,11 +29,6 @@
   (let ((out-port (open-output-string)))
     (let loop ((line (read-line port)))
       (cond ((eq? line eof) #f)
-            ((< (string-length line) 5)
-             (begin
-               (write-string line out-port)
-               (newline out-port)
-               (loop (read-line port))))
             ((string=? (substring line 0 5) "From ")
              (open-input-string (get-output-string out-port)))
             (else
@@ -57,4 +52,5 @@
               (display "To name: ") (display (extract-addresses (cdr (assoc "To" headers)) 'name)) (newline)
               (display "To address: ") (write (extract-addresses (cdr (assoc "To" headers)) 'address)) (newline)
               (display (string->date (cdr (assoc "Date" headers)) "~a, ~d ~b ~Y ~H:~M:~S ~z")) (newline)
+              (newline)
               (loop (read-email mbox)))))))
