@@ -1,0 +1,10 @@
+{
+  "version": 2,
+  "dgSpecHash": "mDG1b7BoluteCe4WobhjG813Xh77Vpoxx4n6xAqRv4y8blU/EURPkYboSYHVbOi3H74jZcwjY+xxA17yGPVH3g==",
+  "success": true,
+  "projectFilePath": "/home/simon/code/powermail/Powermail/Powermail.csproj",
+  "expectedPackageFiles": [
+    "/home/simon/.nuget/packages/superpower/3.0.0/superpower.3.0.0.nupkg.sha512"
+  ],
+  "logs": []
+}

@@ -1,0 +1,17 @@
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/Powermail
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/Powermail.deps.json
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/Powermail.runtimeconfig.json
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/Powermail.dll
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/ref/Powermail.dll
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/Powermail.pdb
+/home/simon/code/powermail/Powermail/bin/Debug/net6.0/Superpower.dll
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.csproj.AssemblyReference.cache
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.GeneratedMSBuildEditorConfig.editorconfig
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.AssemblyInfoInputs.cache
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.AssemblyInfo.cs
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.csproj.CoreCompileInputs.cache
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.csproj.CopyComplete
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.dll
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/ref/Powermail.dll
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.pdb
+/home/simon/code/powermail/Powermail/obj/Debug/net6.0/Powermail.genruntimeconfig.cache
