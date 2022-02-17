@@ -1,6 +1,3 @@
-using System.Collections.Immutable;
-using System.Globalization;
-using System.Security.AccessControl;
 using Superpower;
 using Superpower.Model;
 using Superpower.Parsers;
@@ -38,16 +35,14 @@ public static class Date
 
     private static readonly HashSet<string> Ordinals = new() { "st", "nd", "rd", "th" };
 
-    private static TextParser<T> Lookup<T>(this TextParser<TextSpan> parser, Dictionary<string, T> table)
-        => parser
-            .Where(span => table.ContainsKey(span.ToStringValue().ToLowerInvariant()))
-            .Select(span => table[span.ToStringValue().ToLowerInvariant()]);
+    private static TextParser<T> Lookup<T>(this TextParser<string> parser, Dictionary<string, T> table)
+        => parser.Where(span => table.ContainsKey(span)).Select(span => table[span]);
 
     private static TextParser<TextSpan> Lookup(this TextParser<TextSpan> parser, HashSet<string> set)
         => parser.Where(span => set.Contains(span.ToStringValue().ToLowerInvariant()));
 
-    static TextParser<TextSpan> WordBoundary()
-        => Span.WithAll(ch => char.IsWhiteSpace(ch) || char.IsPunctuation(ch)).Named("word boundary");
+    static readonly TextParser<TextSpan> WordBoundary
+        = Span.WithAll(ch => char.IsWhiteSpace(ch) || char.IsPunctuation(ch)).Named("word delimiter");
 
     static DateOnly AdvanceYear(int month, int day)
     {
@@ -56,48 +51,101 @@ public static class Date
             now = now.AddYears(1);
         return new DateOnly(now.Year, month, day);
     }
-    
-    static TextParser<int> MonthName()
-        => Span.WithAll(char.IsLetter).Lookup(MonthNames);
-    
-    public static TextParser<int> DayOfWeek()
-        => Span.WithAll(char.IsLetter).Lookup(DaysOfWeek);
 
-    static TextParser<int> Year()
-        => Span.WithAll(char.IsDigit)
-            .Select(span =>
-            {
-                var year = int.Parse(span.ToStringValue());
-                return year < 100 ? 2000 + year : year;
-            });
+    static readonly TextParser<string> BareWord = Span.NonWhiteSpace
+        .Select(span => span.ToStringValue().TrimEnd(',', '.').ToLowerInvariant());
+    static readonly TextParser<int> Month = BareWord.Lookup(MonthNames);
+    static readonly TextParser<int> DayOfWeek = BareWord.Lookup(DaysOfWeek);
+    
+    static readonly TextParser<int> Year
+        = Span.WithAll(char.IsDigit).Select(span =>
+        {
+            var year = int.Parse(span.ToStringValue());
+            return year < 100 ? 2000 + year : year;
+        });
 
-    static TextParser<int> Ordinal()
-        => Span.WithAll(char.IsDigit)
-            .Then(span => Span.WithAll(char.IsLetter)
-                .Lookup(Ordinals).Optional()
-                .Value(int.Parse(span.ToStringValue())));
+    static readonly TextParser<int> Ordinal
+        = Span.WithAll(char.IsDigit)
+            .Then(span => Span.WithAll(char.IsLetter).Lookup(Ordinals).Optional().Value(int.Parse(span.ToStringValue())));
+
+    static readonly TextParser<int> Digits
+        = Span.WithAll(char.IsDigit).Select(span => int.Parse(span.ToStringValue()));
+    static readonly TextParser<char> Separator
+        = Character.In('.', '-');
+    static readonly TextParser<DateOnly> DateLiteral
+        = from year in Digits
+          from _ in Separator
+          from month in Digits
+          from __ in Separator
+          from day in Digits
+          select new DateOnly(year, month, day);
 
     public static TextParser<DateOnly> Dates
         => Parse.OneOf(
-            (from day in DayOfWeek()
-                from _ in WordBoundary()
-                from dayNumber in Ordinal()
-                from __ in WordBoundary()
-                from month in MonthName()
-                from ___ in WordBoundary()
-                from year in Year()
-                select new DateOnly(year, month, dayNumber)).Try(),
-            (from day in DayOfWeek()
-                from _ in WordBoundary()
-                from month in MonthName()
-                from __ in WordBoundary()
-                from dayNumber in Ordinal()
-                from ___ in WordBoundary()
-                from year in Year()
-                select new DateOnly(year, month, dayNumber)).Try(),
-            (from month in MonthName()
-                from _ in WordBoundary()
-                from day in Ordinal()
-                select AdvanceYear(month, day)).Try()
+            (from _ in DayOfWeek
+             from __ in WordBoundary
+             from day in Ordinal
+             from ___ in WordBoundary
+             from month in Month
+             from ____ in WordBoundary
+             from year in Year
+             select new DateOnly(year, month, day)).Try(),
+
+            (from month in Month
+             from _ in WordBoundary
+             from day in Ordinal
+             from __ in WordBoundary
+             from year in Year
+             select new DateOnly(year, month, day)).Try(),
+
+            (from _ in DayOfWeek
+             from __ in WordBoundary
+             from month in Month
+             from ___ in WordBoundary
+             from day in Ordinal
+             from ____ in WordBoundary
+             from year in Year
+             select new DateOnly(year, month, day)).Try(),
+
+            (from month in Month
+                from _ in WordBoundary
+                from day in Ordinal
+                select AdvanceYear(month, day)).Try(),
+
+            (from _ in DayOfWeek
+             from day in Ordinal
+             from __ in WordBoundary
+             from month in Month
+             from ___ in WordBoundary
+             from year in Year
+             select new DateOnly(year, month, day)).Try(),
+
+            (from day in Ordinal
+             from _ in WordBoundary
+             from month in Month
+             from __ in WordBoundary
+             from year in Year
+             select new DateOnly(year, month, day)).Try(),
+
+            (from _ in DayOfWeek
+             from __ in WordBoundary
+             from day in Ordinal
+             from ___ in WordBoundary
+             from month in Month
+             select AdvanceYear(month, day)).Try(),
+
+            (from _ in DayOfWeek
+             from __ in WordBoundary
+             from month in Month
+             from ___ in WordBoundary
+             from day in Ordinal
+             select AdvanceYear(month, day)).Try(),
+
+            (from day in Ordinal
+             from _ in WordBoundary
+             from month in Month
+             select AdvanceYear(month, day)).Try(),
+
+            DateLiteral.Try()
         );
 }
