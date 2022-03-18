@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Powermail.Data;
 using Powermail.Server;
 using Powermail.Storage;
 
@@ -19,6 +20,9 @@ Host.CreateDefaultBuilder()
         }
 
         services
+            .AddLogging()
+            .AddSingleton<HttpClient>()
+            .AddSingleton(new Data("data.db"))
             .Configure<ServerConfiguration>(config => context.Configuration.Bind("Server", config))
             .AddHostedService<Server>();
     })
