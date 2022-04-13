@@ -10,7 +10,4 @@ public class SubscriberFeed
     
     /// <summary>Whether this feed is discoverable in the subscriber's profile</summary>
     public bool IsPrivate { get; set; }
-    
-    /// <summary>The time at which items from this feed were sent to the subscriber</summary>
-    public DateTimeOffset Timestamp { get; set; }
 }

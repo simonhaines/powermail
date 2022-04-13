@@ -46,6 +46,8 @@ public class Server : BackgroundService
             if (e is not OperationCanceledException)
                 logger.LogCritical("Terminating server: {exception}", e.Message);
         }
+        
+        logger.LogInformation("Server stopped");
     }
 
     private async Task Process(TcpClient client, CancellationToken token)

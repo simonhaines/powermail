@@ -10,18 +10,16 @@ namespace Powermail.Processors;
 
 public class Feeds
 {
-    private readonly Data.Data db;
     private readonly HttpClient client;
     private readonly ILogger<Feeds> logger;
 
-    public Feeds(Data.Data db, HttpClient client, ILogger<Feeds> logger)
+    public Feeds(HttpClient client, ILogger<Feeds> logger)
     {
-        this.db = db;
         this.client = client;
         this.logger = logger;
     }
 
-    public async Task<IEnumerable<FeedItem>> GetFeed(Powermail.Data.Feed feed)
+    public async Task<IEnumerable<FeedItem>> UpdateFeed(Powermail.Data.Feed feed, CancellationToken token)
     {
         try
         {
@@ -29,7 +27,7 @@ public class Feeds
             request.Headers.IfModifiedSince = feed.Timestamp;
 
             // Don't hang on slow feeds
-            using var tokenSource = new CancellationTokenSource();
+            using var tokenSource = CancellationTokenSource.CreateLinkedTokenSource(token);
             tokenSource.CancelAfter(TimeSpan.FromSeconds(30));
 
             var response = await client.SendAsync(request, tokenSource.Token);
@@ -90,24 +88,5 @@ public class Feeds
             feed.LastAccessCode = HttpStatusCode.RequestTimeout;
             return Enumerable.Empty<FeedItem>();
         }
-    }
-
-    public async Task<Data.Feed> AddFeed(string url)
-    {
-        // Already subscribed?
-        var feed = db.Feeds.FindOne(f => f.Url == url);
-        if (feed == null)
-        {
-            feed = new Data.Feed
-            {
-                Id = ObjectId.NewObjectId(),
-                Url = url
-            };
-            foreach (var item in await GetFeed(feed))
-                db.FeedItems.Insert(item);
-            db.Feeds.Insert(feed);
-        }
-
-        return feed;
     }
 }

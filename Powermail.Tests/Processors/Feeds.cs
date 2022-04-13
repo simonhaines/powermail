@@ -1,6 +1,8 @@
+using System;
 using System.IO;
 using System.Linq;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -19,12 +21,17 @@ public class Feeds
         var services = GetServices();
         var feedsService = services.GetRequiredService<Powermail.Processors.Feeds>();
 
-        var feed = await feedsService.AddFeed(wikipediaNewPagesRss);
-        Assert.IsNotNull(feed);
+        var feed = new Data.Feed { Name = "Wikipedia" };
 
-        var db = services.GetRequiredService<Data.Data>();
-        var items = db.FeedItems.Find(item => item.FeedId == feed.Id);
-        Assert.IsTrue(items.Any());
+        feed.Url = wikipediaNewPagesRss;
+        feed.Timestamp = DateTimeOffset.MinValue;
+        var rssItems = await feedsService.UpdateFeed(feed, CancellationToken.None);
+        Assert.IsTrue(rssItems.Any());
+
+        feed.Url = wikipediaNewPagesAtom;
+        feed.Timestamp = DateTimeOffset.MinValue;
+        var atomItems = await feedsService.UpdateFeed(feed, CancellationToken.None);
+        Assert.IsTrue(atomItems.Any());
     }
 
     private ServiceProvider GetServices()

@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Powermail.Data;
+using Powermail.Processors;
 using Powermail.Server;
 using Powermail.Storage;
 
@@ -23,6 +24,10 @@ Host.CreateDefaultBuilder()
             .AddLogging()
             .AddSingleton<HttpClient>()
             .AddSingleton(new Data("data.db"))
+            .AddTransient<IStorage, FileSystem>()
+            .AddTransient<Feeds>()
+            .Configure<SchedulerConfiguration>(config => context.Configuration.Bind("Scheduler", config))
+            .AddHostedService<Scheduler>()
             .Configure<ServerConfiguration>(config => context.Configuration.Bind("Server", config))
             .AddHostedService<Server>();
     })
