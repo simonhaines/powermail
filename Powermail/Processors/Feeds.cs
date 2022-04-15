@@ -4,19 +4,23 @@ using CodeHollow.FeedReader;
 using CodeHollow.FeedReader.Feeds;
 using LiteDB;
 using Microsoft.Extensions.Logging;
+using Powermail.Data;
+using Powermail.Templates;
 using FeedItem = Powermail.Data.FeedItem;
 
 namespace Powermail.Processors;
 
 public class Feeds
 {
+    private readonly Data.Data data;
     private readonly HttpClient client;
     private readonly ILogger<Feeds> logger;
 
-    public Feeds(HttpClient client, ILogger<Feeds> logger)
+    public Feeds(Data.Data data, HttpClient client, ILogger<Feeds> logger)
     {
-        this.client = client;
-        this.logger = logger;
+        this.data = data ?? throw new ArgumentNullException(nameof(data));
+        this.client = client ?? throw new ArgumentNullException(nameof(client));
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task<IEnumerable<FeedItem>> UpdateFeed(Powermail.Data.Feed feed, CancellationToken token)
@@ -87,6 +91,27 @@ public class Feeds
             feed.ErrorCount++;
             feed.LastAccessCode = HttpStatusCode.RequestTimeout;
             return Enumerable.Empty<FeedItem>();
+        }
+    }
+
+    public IEnumerable<FeedTemplate> RenderUpdates(Subscriber subscriber, DateTimeOffset lastUpdate)
+    {
+        foreach (var subscriberFeed in data.SubscriberFeeds.Find(sf => sf.SubscriberId == subscriber.Id))
+        {
+            var feed = data.Feeds.FindById(subscriberFeed.FeedId);
+            if (feed == null) continue;
+
+            var items = data.FeedItems
+                .Find(i => i.FeedId == subscriberFeed.Id && i.Timestamp > lastUpdate)
+                .ToList();
+            if (items.Count > 0)
+            {
+                yield return new FeedTemplate
+                {
+                    Name = feed.Name,
+                    Items = items
+                };
+            }
         }
     }
 }

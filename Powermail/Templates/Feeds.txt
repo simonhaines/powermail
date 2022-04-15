@@ -1,0 +1,7 @@
+{{ Name }}
+{{ for item in Items }}
+  • {{ item.Title }}
+    {{ item.Url }}
+{{ end }}
+
+{{ end }}

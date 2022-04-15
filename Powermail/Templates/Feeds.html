@@ -1,0 +1,11 @@
+<div dir="ltr">
+    <div>
+        <b>{{ Name }}</b>
+        <ul>
+            {{ for item in Items }}
+            <li><a href="{{ item.Url }}">{{ item.Title }}</a></li>
+            {{ end }}
+        </ul>
+    </div>
+    {{ end }}
+</div>

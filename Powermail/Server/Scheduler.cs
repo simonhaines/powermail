@@ -1,3 +1,4 @@
+using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,7 @@ public class Scheduler : IHostedService
 {
     private readonly IOptions<SchedulerConfiguration> configuration;
     private readonly Data.Data data;
+    private readonly Mailer mailer;
     private readonly ILogger<Scheduler> logger;
     private readonly CancellationTokenSource tokenSource;
 
@@ -25,12 +27,13 @@ public class Scheduler : IHostedService
     private Timer? sendFeedTimer;
     
     public Scheduler(IOptions<SchedulerConfiguration> configuration, Data.Data data, Feeds feeds,
-        ILogger<Scheduler> logger)
+        Mailer mailer, ILogger<Scheduler> logger)
     {
-        this.configuration = configuration;
-        this.data = data;
-        this.logger = logger;
-        this.feeds = feeds;
+        this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        this.data = data ?? throw new ArgumentNullException(nameof(data));
+        this.feeds = feeds ?? throw new ArgumentNullException(nameof(feeds));
+        this.mailer = mailer ?? throw new ArgumentNullException(nameof(mailer));
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
         tokenSource = new CancellationTokenSource();
     }
 
@@ -110,13 +113,18 @@ public class Scheduler : IHostedService
                     logger.LogWarning("No subscriber with Id '{subscriber}'", schedule.SubscriberId);
                     continue;
                 }
-                    
-                logger.LogInformation("Sending feed items to subscriber '{subscriber}'", subscriber.Name);
-                // TODO
 
-                // Update the time the feed items were sent
-                schedule.FeedDelivery = DateTimeOffset.UtcNow;
-                data.SubscriberSchedules.Update(schedule);
+                var templates = feeds.RenderUpdates(subscriber, schedule.FeedDelivery.Value).ToList();
+                if (templates.Any())
+                {
+                    logger.LogInformation("Sending {count} feeds to {subscriber}", templates.Count, subscriber.Name);
+                    mailer.Send(subscriber, "Feed updates", templates).Wait();
+
+                    // Update the time the feed items were sent (or not)
+                    schedule.FeedDelivery = DateTimeOffset.UtcNow;
+                    data.SubscriberSchedules.Update(schedule);
+                }
+                else logger.LogInformation("No items to send for {subscriber}", subscriber.Name);
             }
         }
         catch (Exception e)
