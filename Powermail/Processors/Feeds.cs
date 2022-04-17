@@ -23,7 +23,7 @@ public class Feeds
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IEnumerable<FeedItem>> UpdateFeed(Powermail.Data.Feed feed, CancellationToken token)
+    public async Task<IEnumerable<FeedItem>> UpdateFeed(Data.Feed feed, CancellationToken token)
     {
         try
         {
@@ -96,22 +96,23 @@ public class Feeds
 
     public IEnumerable<FeedTemplate> RenderUpdates(Subscriber subscriber, DateTimeOffset lastUpdate)
     {
+        var result = new List<FeedTemplate>();
         foreach (var subscriberFeed in data.SubscriberFeeds.Find(sf => sf.SubscriberId == subscriber.Id))
         {
             var feed = data.Feeds.FindById(subscriberFeed.FeedId);
             if (feed == null) continue;
 
             var items = data.FeedItems
-                .Find(i => i.FeedId == subscriberFeed.Id && i.Timestamp > lastUpdate)
+                .Find(i => i.FeedId == subscriberFeed.FeedId && i.Timestamp > lastUpdate)
                 .ToList();
             if (items.Count > 0)
-            {
-                yield return new FeedTemplate
+                result.Add(new FeedTemplate
                 {
                     Name = feed.Name,
                     Items = items
-                };
-            }
+                });
         }
+
+        return result;
     }
 }

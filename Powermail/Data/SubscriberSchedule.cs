@@ -4,11 +4,12 @@ namespace Powermail.Data;
 
 public class SubscriberSchedule
 {
-    public ObjectId Id { get; set; }
-    public ObjectId SubscriberId { get; set; }
+    public ObjectId Id { get; init; } = ObjectId.Empty;
+    public ObjectId SubscriberId { get; init; } = ObjectId.Empty;
     
     /// <summary>The time at which feed items were last sent to the subscriber</summary>
-    public DateTimeOffset? FeedDelivery { get; set; }
+    public DateTimeOffset FeedTimestamp { get; set; } = DateTimeOffset.MinValue;
+
     /// <summary>The schedule of feed delivery</summary>
-    public TimeSpan? FeedDeliveryInterval { get; set; }
+    public TimeSpan FeedInterval { get; set; } = TimeSpan.Zero;
 }

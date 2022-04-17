@@ -4,7 +4,7 @@ namespace Powermail.Data;
 
 public class Subscriber
 {
-    public ObjectId Id { get; set; }
-    public string Email { get; set; }
-    public string Name { get; set; }
+    public ObjectId Id { get; init; } = ObjectId.Empty;
+    public string? Email { get; init; }
+    public string? Name { get; init; }
 }

@@ -4,9 +4,9 @@ namespace Powermail.Data;
 
 public class FeedItem
 {
-    public ObjectId Id { get; set; }
-    public ObjectId FeedId { get; set; }
-    public string Title { get; set; }
-    public string Url { get; set; }
-    public DateTimeOffset Timestamp { get; set; }
+    public ObjectId Id { get; init; } = ObjectId.Empty;
+    public ObjectId FeedId { get; init; } = ObjectId.Empty;
+    public string Url { get; init; } = string.Empty;
+    public string Title { get; init; } = string.Empty;
+    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.MinValue;
 }

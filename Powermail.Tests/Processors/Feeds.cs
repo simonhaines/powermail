@@ -18,10 +18,9 @@ public class Feeds
         const string wikipediaNewPagesAtom = "https://en.wikipedia.org/w/index.php?title=Special:NewPages&feed=atom";
         const string wikipediaNewPagesRss = "https://en.wikipedia.org/w/index.php?title=Special:NewPages&feed=rss";
 
+        var feed = new Powermail.Data.Feed { Name = "Wikipedia" };
         var services = GetServices();
         var feedsService = services.GetRequiredService<Powermail.Processors.Feeds>();
-
-        var feed = new Data.Feed { Name = "Wikipedia" };
 
         feed.Url = wikipediaNewPagesRss;
         feed.Timestamp = DateTimeOffset.MinValue;
@@ -34,13 +33,19 @@ public class Feeds
         Assert.IsTrue(atomItems.Any());
     }
 
+    [TestMethod]
+    public async Task TestRender()
+    {
+        
+    }
+
     private ServiceProvider GetServices()
     {
         var services = new ServiceCollection();
         services
             .AddLogging()
             .AddSingleton<HttpClient>()
-            .AddSingleton(new Data.Data(new MemoryStream()))
+            .AddSingleton(new Powermail.Data.Data(new MemoryStream()))
             .AddSingleton<Powermail.Processors.Feeds>();
         return services.BuildServiceProvider();
     }

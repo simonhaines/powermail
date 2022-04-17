@@ -10,7 +10,7 @@ public class FeedTemplate : ITemplate
     private static readonly Template Text = Template.Parse(File.ReadAllText("Templates/Feeds.txt"));
 
     public string? Name { get; init; }
-    public IEnumerable<FeedItem> Items { get; init; }
+    public IEnumerable<FeedItem> Items { get; init; } = Enumerable.Empty<FeedItem>();
 
     public void Render(BodyBuilder builder)
     {
