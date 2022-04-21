@@ -108,7 +108,7 @@ public class Feeds
             if (items.Count > 0)
                 result.Add(new FeedTemplate
                 {
-                    Name = feed.Name,
+                    Name = feed.Name ?? "Unnamed feed",
                     Items = items
                 });
         }

@@ -33,12 +33,6 @@ public class Feeds
         Assert.IsTrue(atomItems.Any());
     }
 
-    [TestMethod]
-    public async Task TestRender()
-    {
-        
-    }
-
     private ServiceProvider GetServices()
     {
         var services = new ServiceCollection();

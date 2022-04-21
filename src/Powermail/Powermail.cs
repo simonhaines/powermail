@@ -20,18 +20,23 @@ Host.CreateDefaultBuilder()
                 services.AddSingleton<IStorage, FileSystem>();
             }
         }
+        else
+        {
+            services.Configure<FileSystemConfiguration>(config => 
+                config.Path = Path.Join(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "powermail"));
+            services.AddSingleton<IStorage, FileSystem>();
+        }
 
         services
             .AddLogging()
             .AddSingleton<HttpClient>()
             .AddSingleton(new Data("data.db"))
-            .AddTransient<IStorage, FileSystem>()
             .AddTransient<Feeds>()
-            .Configure<MailerConfiguration>(config => context.Configuration.Bind("Mailer", config))
+            .Configure<MailerConfiguration>(context.Configuration.GetSection("Mailer"))
             .AddTransient<Mailer>()
-            .Configure<SchedulerConfiguration>(config => context.Configuration.Bind("Scheduler", config))
+            .Configure<SchedulerConfiguration>(context.Configuration.GetSection("Scheduler"))
             .AddHostedService<Scheduler>()
-            .Configure<ServerConfiguration>(config => context.Configuration.Bind("Server", config))
+            .Configure<ServerConfiguration>(context.Configuration.GetSection("Server"))
             .AddHostedService<Server>();
     })
     .Build()
