@@ -34,7 +34,7 @@ public class Scheduler
         {
             Id = ObjectId.NewObjectId(),
             SubscriberId = subscriber.Id,
-            FeedTimestamp = DateTimeOffset.UtcNow.Subtract(TimeSpan.FromDays(7)),
+            FeedTimestamp = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7)),
             FeedInterval = TimeSpan.FromDays(1)
         });
         
@@ -43,7 +43,7 @@ public class Scheduler
         {
             Id = ObjectId.NewObjectId(),
             Name = "Test feed",
-            Timestamp = DateTimeOffset.UtcNow,
+            Timestamp = DateTime.UtcNow,
             Url = "https://scalardata.com/feeds/test"
         };
         data.Feeds.Insert(testFeed);
@@ -61,7 +61,7 @@ public class Scheduler
             FeedId = testFeed.Id,
             Title = "Test item",
             Url = "https://scalardata.com/feeds/test/item",
-            Timestamp = DateTimeOffset.UtcNow
+            Timestamp = DateTime.UtcNow
         });
         
         // Ensure updates are rendered

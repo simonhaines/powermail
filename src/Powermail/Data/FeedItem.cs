@@ -8,5 +8,5 @@ public class FeedItem
     public ObjectId FeedId { get; init; } = ObjectId.Empty;
     public string Url { get; init; } = string.Empty;
     public string Title { get; init; } = string.Empty;
-    public DateTimeOffset Timestamp { get; init; } = DateTimeOffset.MinValue;
+    public DateTime Timestamp { get; init; } = DateTime.MinValue;
 }

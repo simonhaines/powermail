@@ -23,12 +23,12 @@ public class Feeds
         var feedsService = services.GetRequiredService<Powermail.Processors.Feeds>();
 
         feed.Url = wikipediaNewPagesRss;
-        feed.Timestamp = DateTimeOffset.MinValue;
+        feed.Timestamp = DateTime.MinValue;
         var rssItems = await feedsService.UpdateFeed(feed, CancellationToken.None);
         Assert.IsTrue(rssItems.Any());
 
         feed.Url = wikipediaNewPagesAtom;
-        feed.Timestamp = DateTimeOffset.MinValue;
+        feed.Timestamp = DateTime.MinValue;
         var atomItems = await feedsService.UpdateFeed(feed, CancellationToken.None);
         Assert.IsTrue(atomItems.Any());
     }

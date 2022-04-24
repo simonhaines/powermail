@@ -18,6 +18,8 @@ public class Data : IDisposable
     public ILiteCollection<SubscriberFeed> SubscriberFeeds => db.GetCollection<SubscriberFeed>();
     public ILiteCollection<SubscriberSchedule> SubscriberSchedules => db.GetCollection<SubscriberSchedule>();
 
+    public void SaveChanges() => db.Checkpoint();
+
     public void Dispose()
         => db.Dispose();
 }

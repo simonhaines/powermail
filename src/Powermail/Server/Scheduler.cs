@@ -72,28 +72,36 @@ public class Scheduler : IHostedService
         logger.LogInformation("Updating feeds");
         var stopwatch = Stopwatch.StartNew();
 
-        foreach (var feed in data.Feeds.FindAll())
+        try
         {
-            try
+            foreach (var feed in data.Feeds.FindAll())
             {
-                var feedStart = stopwatch.ElapsedMilliseconds;
+                try
+                {
+                    var feedStart = stopwatch.ElapsedMilliseconds;
 
-                // Gather and insert the new feed items
-                var items = await feeds.UpdateFeed(feed, tokenSource.Token);
-                data.FeedItems.InsertBulk(items);
-                data.Feeds.Update(feed);
-                logger.LogInformation("Feed '{feed}' ({time}ms): {items} items, {errors} errors",
-                    stopwatch.ElapsedMilliseconds - feedStart, feed.Name, items.Count(), feed.ErrorCount);
+                    // Gather and insert the new feed items
+                    var items = await feeds.UpdateFeed(feed, tokenSource.Token);
+                    data.FeedItems.InsertBulk(items);
+                    data.Feeds.Update(feed);
+                    logger.LogInformation("Feed '{feed}' ({time}ms): {items} items, {errors} errors",
+                        stopwatch.ElapsedMilliseconds - feedStart, feed.Name, items.Count(), feed.ErrorCount);
+                }
+                catch (OperationCanceledException)
+                {
+                    logger.LogInformation("Operation cancelled while updating feeds");
+                    return;
+                }
+                catch (Exception e)
+                {
+                    logger.LogError(e, "Exception updating feed '{name}'", feed.Name);
+                }
             }
-            catch (OperationCanceledException)
-            {
-                logger.LogInformation("Operation cancelled while updating feeds");
-                return;
-            }
-            catch (Exception e)
-            {
-                logger.LogError(e, "Exception updating feed '{name}'", feed.Name);
-            }
+        }
+        finally
+        {
+            logger.LogInformation("Feeds updates in {time}ms", stopwatch.ElapsedMilliseconds);
+            data.SaveChanges();
         }
     }
 
@@ -105,10 +113,16 @@ public class Scheduler : IHostedService
         try
         {
             // Check all subscriber feed schedules and see if any are due
-            foreach (var schedule in data.SubscriberSchedules.FindAll())
+            var schedules = data.SubscriberSchedules.FindAll().ToList();
+            logger.LogDebug("Processing {count} schedules", schedules.Count);
+            foreach (var schedule in schedules)
             {
                 if (!IsScheduleDue(schedule, configuration.Value.SendFeeds))
+                {
+                    logger.LogDebug("Schedule not due ({time})",
+                        (schedule.FeedTimestamp + schedule.FeedInterval).ToLocalTime().ToString("s"));
                     continue;
+                }
 
                 var subscriber = data.Subscribers.FindById(schedule.SubscriberId);
                 if (subscriber == null)
@@ -124,7 +138,7 @@ public class Scheduler : IHostedService
                     mailer.Send(subscriber, "Feed updates", templates).Wait();
 
                     // Update the time the feed items were sent (or not)
-                    schedule.FeedTimestamp = DateTimeOffset.UtcNow;
+                    schedule.FeedTimestamp = DateTime.UtcNow;
                     data.SubscriberSchedules.Update(schedule);
                 }
                 else logger.LogInformation("No items to send for {subscriber}", subscriber.Name);
@@ -137,6 +151,7 @@ public class Scheduler : IHostedService
         finally
         {
             logger.LogDebug("Subscriber feeds processed in {time}ms", stopwatch.ElapsedMilliseconds);
+            data.SaveChanges();
         }
     }
 

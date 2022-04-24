@@ -8,7 +8,7 @@ public class SubscriberSchedule
     public ObjectId SubscriberId { get; init; } = ObjectId.Empty;
     
     /// <summary>The time at which feed items were last sent to the subscriber</summary>
-    public DateTimeOffset FeedTimestamp { get; set; } = DateTimeOffset.MinValue;
+    public DateTime FeedTimestamp { get; set; } = DateTime.MinValue;
 
     /// <summary>The schedule of feed delivery</summary>
     public TimeSpan FeedInterval { get; set; } = TimeSpan.Zero;

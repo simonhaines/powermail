@@ -1,4 +1,5 @@
 using MailKit.Net.Smtp;
+using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
 using Powermail.Data;
@@ -19,10 +20,12 @@ public class MailerConfiguration
 public class Mailer
 {
     private readonly IOptions<MailerConfiguration> configuration;
+    private readonly ILogger<Mailer> logger;
 
-    public Mailer(IOptions<MailerConfiguration> configuration)
+    public Mailer(IOptions<MailerConfiguration> configuration, ILogger<Mailer> logger)
     {
         this.configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     public async Task Send(Subscriber subscriber, string subject, IEnumerable<ITemplate> templates)

@@ -39,7 +39,7 @@ public class Feeds
             if (response.StatusCode == HttpStatusCode.NotModified)
             {
                 feed.ErrorCount = 0;
-                feed.Timestamp = DateTimeOffset.UtcNow;
+                feed.Timestamp = DateTime.UtcNow;
                 return Enumerable.Empty<FeedItem>();
             }
 
@@ -53,27 +53,27 @@ public class Feeds
             var feedContent = FeedReader.ReadFromString(await response.Content.ReadAsStringAsync(tokenSource.Token));
             feed.Name ??= feedContent.Title;
             feed.ErrorCount = 0;
-            feed.Timestamp = DateTimeOffset.UtcNow;
+            feed.Timestamp = DateTime.UtcNow;
             return feedContent.Items.Select(item =>
             {
                 // Try to determine a published date
-                var published = DateTimeOffset.UtcNow;
+                var published = DateTime.UtcNow;
 
                 if (item.SpecificItem is AtomFeedItem atomFeedItem)
                 {
                     // ATOM feeds use 'updated' as the publish date
                     if (atomFeedItem.UpdatedDate.HasValue)
-                        published = new DateTimeOffset(atomFeedItem.UpdatedDate.Value);
-                    else if (DateTimeOffset.TryParse(atomFeedItem.UpdatedDateString, out var updatedDate))
-                        published = updatedDate;
+                        published = atomFeedItem.UpdatedDate.Value.ToUniversalTime();
+                    else if (DateTime.TryParse(atomFeedItem.UpdatedDateString, out var updatedDate))
+                        published = updatedDate.ToUniversalTime();
                 }
                 else
                 {
                     // RSS feeds use the publishing date
                     if (item.PublishingDate.HasValue)
-                        published = new DateTimeOffset(item.PublishingDate.Value);
-                    else if (DateTimeOffset.TryParse(item.PublishingDateString, out var publishingDate))
-                        published = publishingDate;
+                        published = item.PublishingDate.Value.ToUniversalTime();
+                    else if (DateTime.TryParse(item.PublishingDateString, out var publishingDate))
+                        published = publishingDate.ToUniversalTime();
                 }
 
                 return new FeedItem
