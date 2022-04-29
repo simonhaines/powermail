@@ -1,4 +1,3 @@
-using System.Collections.Immutable;
 using System.Diagnostics;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
@@ -49,8 +48,8 @@ public class Scheduler : IHostedService
         logger.LogInformation("Update feed timer started: next = {start}, interval = {interval}",
             start.ToLocalTime().ToString("s"), configuration.Value.UpdateFeeds);
         
-        // Send feed items to subscribers every interval
-        sendFeedTimer = new Timer(SendSubscriberFeeds, null, start - utc, configuration.Value.SendFeeds);
+        // Send feed items to users every interval
+        sendFeedTimer = new Timer(SendUserFeeds, null, start - utc, configuration.Value.SendFeeds);
         logger.LogInformation("Send feed timer started: next = {start}, interval = {interval}",
             start.ToLocalTime().ToString("s"), configuration.Value.SendFeeds);
 
@@ -85,7 +84,7 @@ public class Scheduler : IHostedService
                     data.FeedItems.InsertBulk(items);
                     data.Feeds.Update(feed);
                     logger.LogInformation("Feed '{feed}' ({time}ms): {items} items, {errors} errors",
-                        stopwatch.ElapsedMilliseconds - feedStart, feed.Name, items.Count(), feed.ErrorCount);
+                        feed.Name, stopwatch.ElapsedMilliseconds - feedStart, items.Count(), feed.ErrorCount);
                 }
                 catch (OperationCanceledException)
                 {
@@ -101,47 +100,42 @@ public class Scheduler : IHostedService
         finally
         {
             logger.LogInformation("Feeds updates in {time}ms", stopwatch.ElapsedMilliseconds);
-            data.SaveChanges();
         }
     }
 
-    private void SendSubscriberFeeds(object? state)
+    private void SendUserFeeds(object? state)
     {
-        logger.LogInformation("Sending subscriber feeds");
+        logger.LogInformation("Sending user feeds");
         var stopwatch = Stopwatch.StartNew();
 
         try
         {
-            // Check all subscriber feed schedules and see if any are due
-            var schedules = data.SubscriberSchedules.FindAll().ToList();
-            logger.LogDebug("Processing {count} schedules", schedules.Count);
+            // Check all user feed schedules and see if any are due
+            var schedules = data.UserSchedules.FindAll().ToList();
+            logger.LogDebug("Processing {count} schedules", schedules.Count());
             foreach (var schedule in schedules)
             {
                 if (!IsScheduleDue(schedule, configuration.Value.SendFeeds))
+                    continue;
+
+                var user = data.Users.FindById(schedule.UserId);
+                if (user == null)
                 {
-                    logger.LogDebug("Schedule not due ({time})",
-                        (schedule.FeedTimestamp + schedule.FeedInterval).ToLocalTime().ToString("s"));
+                    logger.LogWarning("No user with Id '{user}'", schedule.UserId);
                     continue;
                 }
 
-                var subscriber = data.Subscribers.FindById(schedule.SubscriberId);
-                if (subscriber == null)
-                {
-                    logger.LogWarning("No subscriber with Id '{subscriber}'", schedule.SubscriberId);
-                    continue;
-                }
-
-                var templates = feeds.RenderUpdates(subscriber, schedule.FeedTimestamp).ToList();
+                var templates = feeds.RenderUpdates(user, schedule.FeedTimestamp).ToList();
                 if (templates.Any())
                 {
-                    logger.LogInformation("Sending {count} feeds to {subscriber}", templates.Count, subscriber.Name);
-                    mailer.Send(subscriber, "Feed updates", templates).Wait();
+                    logger.LogInformation("Sending {count} feeds to {user}", templates.Count, user.Name);
+                    mailer.Send(user, "Feed updates", templates).Wait();
 
                     // Update the time the feed items were sent (or not)
                     schedule.FeedTimestamp = DateTime.UtcNow;
-                    data.SubscriberSchedules.Update(schedule);
+                    data.UserSchedules.Update(schedule);
                 }
-                else logger.LogInformation("No items to send for {subscriber}", subscriber.Name);
+                else logger.LogInformation("No items to send for {user}", user.Name);
             }
         }
         catch (Exception e)
@@ -150,15 +144,15 @@ public class Scheduler : IHostedService
         }
         finally
         {
-            logger.LogDebug("Subscriber feeds processed in {time}ms", stopwatch.ElapsedMilliseconds);
-            data.SaveChanges();
+            logger.LogDebug("User feeds processed in {time}ms", stopwatch.ElapsedMilliseconds);
         }
     }
 
     /// <summary>Determine if a schedule becomes due in the next interval</summary>
-    private static bool IsScheduleDue(SubscriberSchedule schedule, TimeSpan interval)
+    private static bool IsScheduleDue(UserSchedule schedule, TimeSpan interval)
     {
         var period = DateTime.UtcNow + interval;
-        return schedule.FeedTimestamp + schedule.FeedInterval < period;
+        return !schedule.FeedTimestamp.HasValue
+            || schedule.FeedTimestamp.Value + schedule.FeedInterval < period;
     }
 }

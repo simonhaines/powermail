@@ -1,11 +1,11 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
+using LiteDB;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
-using Powermail.Storage;
 
 namespace Powermail.Server;
 
@@ -17,13 +17,13 @@ public class ServerConfiguration
 public class Server : BackgroundService
 {
     private readonly IOptions<ServerConfiguration> configuration;
-    private readonly IStorage storage;
+    private readonly Data.Data data;
     private readonly ILogger<Server> logger;
     
-    public Server(IOptions<ServerConfiguration> configuration, IStorage storage, ILogger<Server> logger)
+    public Server(IOptions<ServerConfiguration> configuration, Data.Data data, ILogger<Server> logger)
     {
         this.configuration = configuration;
-        this.storage = storage;
+        this.data = data;
         this.logger = logger;
     }
 
@@ -53,29 +53,30 @@ public class Server : BackgroundService
     private async Task Process(TcpClient client, CancellationToken token)
     {
         var stopwatch = Stopwatch.StartNew();
-
-        await using var stream = client.GetStream();
-        using var message = await MimeMessage.LoadAsync(stream, token);
-        if (message != null)
+        try
         {
-            var guido = Guid.NewGuid().ToString();
-
-            // Save the whole message
-            await using var messageStream = storage.GetStream($"{guido}.mime");
-            await message.WriteToAsync(messageStream, token);
-                
-            foreach (var bodyPart in message.BodyParts)
+            using var message = await MimeMessage.LoadAsync(client.GetStream(), token);
+            if (message != null)
             {
-                // Save the text/plain part
-                if (bodyPart is not MimePart mimePart || !mimePart.ContentType.IsMimeType("text", "plain")) continue;
+                // Save the whole message
+                await using var messageStream = new MemoryStream();
+                await message.WriteToAsync(messageStream, token);
+                messageStream.Position = 0;
 
-                await using var fileStream = storage.GetStream($"{guido}.txt");
-                await mimePart.Content.WriteToAsync(fileStream, token);
-                break;
+                var id = ObjectId.NewObjectId();
+                data.InboxStorage.Upload(id, id.ToString(), messageStream);
             }
         }
-        
-        logger.LogInformation("Message from {remote} processed in {time}ms",
-            client.Client.RemoteEndPoint, stopwatch.ElapsedMilliseconds);
+        catch (Exception e)
+        {
+            logger.LogError(e, "Error processing client connection");
+        }
+        finally
+        {
+            logger.LogInformation("Message from {remote} processed in {time}ms",
+                client.Client.RemoteEndPoint, stopwatch.ElapsedMilliseconds);
+
+            client.Dispose();
+        }
     }
 }

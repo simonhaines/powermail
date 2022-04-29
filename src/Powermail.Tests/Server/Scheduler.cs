@@ -18,22 +18,22 @@ public class Scheduler
     public async Task TestSubscriberSchedule()
     {
         await using var services = GetServices();
-        var data = services.GetRequiredService<Powermail.Data.Data>();
+        using var data = services.GetRequiredService<Data.Data>(); ;
 
-        // Subscriber
-        var subscriber = new Subscriber
+        // User
+        var user = new User
         {
             Id = ObjectId.NewObjectId(),
             Name = "Test",
             Email = "test@scalardata.com"
         };
-        data.Subscribers.Insert(subscriber);
+        data.Users.Insert(user);
         
         // Schedule for feeds is 24 hours, last sent a week ago
-        data.SubscriberSchedules.Insert(new SubscriberSchedule
+        data.UserSchedules.Insert(new UserSchedule
         {
             Id = ObjectId.NewObjectId(),
-            SubscriberId = subscriber.Id,
+            UserId = user.Id,
             FeedTimestamp = DateTime.UtcNow.Subtract(TimeSpan.FromDays(7)),
             FeedInterval = TimeSpan.FromDays(1)
         });
@@ -47,10 +47,10 @@ public class Scheduler
             Url = "https://scalardata.com/feeds/test"
         };
         data.Feeds.Insert(testFeed);
-        data.SubscriberFeeds.Insert(new SubscriberFeed
+        data.UserFeeds.Insert(new UserFeed
         {
             Id = new ObjectId(),
-            SubscriberId = subscriber.Id,
+            UserId = user.Id,
             FeedId = testFeed.Id
         });
         
@@ -63,10 +63,10 @@ public class Scheduler
             Url = "https://scalardata.com/feeds/test/item",
             Timestamp = DateTime.UtcNow
         });
-        
+
         // Ensure updates are rendered
         var feeds = services.GetRequiredService<Feeds>();
-        var templates = feeds.RenderUpdates(subscriber, DateTimeOffset.MinValue);
+        var templates = feeds.RenderUpdates(user, null);
         Assert.IsTrue(templates.Any());
     }
     
@@ -76,7 +76,7 @@ public class Scheduler
         services
             .AddLogging()
             .AddSingleton<HttpClient>()
-            .AddSingleton(new Powermail.Data.Data(new MemoryStream()))
+            .AddSingleton(new Data.Data(new MemoryStream()))
             .AddSingleton<Feeds>();
 
         return services.BuildServiceProvider();

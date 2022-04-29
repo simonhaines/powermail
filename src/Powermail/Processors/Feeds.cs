@@ -94,21 +94,25 @@ public class Feeds
         }
     }
 
-    public IEnumerable<FeedTemplate> RenderUpdates(Subscriber subscriber, DateTimeOffset lastUpdate)
+    public IEnumerable<FeedTemplate> RenderUpdates(User user, DateTime? lastUpdate)
     {
+        // Normalise last update value
+        if (!lastUpdate.HasValue)
+            lastUpdate = DateTime.MinValue.ToUniversalTime();
+
         var result = new List<FeedTemplate>();
-        foreach (var subscriberFeed in data.SubscriberFeeds.Find(sf => sf.SubscriberId == subscriber.Id))
+        foreach (var userFeed in data.UserFeeds.Find(sf => sf.UserId == user.Id))
         {
-            var feed = data.Feeds.FindById(subscriberFeed.FeedId);
+            var feed = data.Feeds.FindById(userFeed.FeedId);
             if (feed == null) continue;
 
             var items = data.FeedItems
-                .Find(i => i.FeedId == subscriberFeed.FeedId && i.Timestamp > lastUpdate)
+                .Find(i => i.FeedId == userFeed.FeedId && i.Timestamp > lastUpdate)
                 .ToList();
             if (items.Count > 0)
                 result.Add(new FeedTemplate
                 {
-                    Name = feed.Name ?? "Unnamed feed",
+                    Name = userFeed.Name ?? feed.Name ?? "The feed with no name",
                     Items = items
                 });
         }

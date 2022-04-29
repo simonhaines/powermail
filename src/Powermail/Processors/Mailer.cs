@@ -28,12 +28,12 @@ public class Mailer
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task Send(Subscriber subscriber, string subject, IEnumerable<ITemplate> templates)
+    public async Task Send(User user, string subject, IEnumerable<ITemplate> templates)
     {
         // Create the message
         var message = new MimeMessage();
         message.From.Add(new MailboxAddress(configuration.Value.Name, configuration.Value.Address));
-        message.To.Add(new MailboxAddress(subscriber.Name, subscriber.Email));
+        message.To.Add(new MailboxAddress(user.Name, user.Email));
         message.Subject = subject;
         
         // Build the body
