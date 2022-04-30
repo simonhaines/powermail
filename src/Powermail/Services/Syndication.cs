@@ -1,29 +1,25 @@
-using System.Data;
 using System.Net;
 using CodeHollow.FeedReader;
 using CodeHollow.FeedReader.Feeds;
-using LiteDB;
 using Microsoft.Extensions.Logging;
 using Powermail.Data;
-using Powermail.Templates;
-using FeedItem = Powermail.Data.FeedItem;
 
-namespace Powermail.Processors;
+namespace Powermail.Services;
 
-public class Feeds
+public class Syndication
 {
-    private readonly Data.Data data;
+    private readonly DataContext data;
     private readonly HttpClient client;
-    private readonly ILogger<Feeds> logger;
+    private readonly ILogger<Syndication> logger;
 
-    public Feeds(Data.Data data, HttpClient client, ILogger<Feeds> logger)
+    public Syndication(DataContext data, HttpClient client, ILogger<Syndication> logger)
     {
         this.data = data ?? throw new ArgumentNullException(nameof(data));
         this.client = client ?? throw new ArgumentNullException(nameof(client));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task<IEnumerable<FeedItem>> UpdateFeed(Data.Feed feed, CancellationToken token)
+    public async Task UpdateFeed(Data.Models.Feed feed, CancellationToken token)
     {
         try
         {
@@ -40,13 +36,13 @@ public class Feeds
             {
                 feed.ErrorCount = 0;
                 feed.Timestamp = DateTime.UtcNow;
-                return Enumerable.Empty<FeedItem>();
+                return;
             }
 
             if (!response.IsSuccessStatusCode)
             {
                 feed.ErrorCount++;
-                return Enumerable.Empty<FeedItem>();
+                return;
             }
 
             // Select all feed items since the last contact
@@ -54,11 +50,17 @@ public class Feeds
             feed.Name ??= feedContent.Title;
             feed.ErrorCount = 0;
             feed.Timestamp = DateTime.UtcNow;
-            return feedContent.Items.Select(item =>
+            
+            // Insert new items
+            foreach (var item in feedContent.Items)
             {
+                // Skip items with the same internal Id
+                if (feed.Items.Any(i => i.InternalId == item.Id))
+                    continue;
+                
                 // Try to determine a published date
                 var published = DateTime.UtcNow;
-
+                
                 if (item.SpecificItem is AtomFeedItem atomFeedItem)
                 {
                     // ATOM feeds use 'updated' as the publish date
@@ -76,47 +78,19 @@ public class Feeds
                         published = publishingDate.ToUniversalTime();
                 }
 
-                return new FeedItem
+                feed.Items.Add(new Data.Models.FeedItem
                 {
-                    Id = ObjectId.NewObjectId(),
                     FeedId = feed.Id,
                     Title = item.Title,
                     Url = item.Link,
                     Timestamp = published
-                };
-            });
+                });
+            }
         }
         catch (OperationCanceledException)
         {
             feed.ErrorCount++;
             feed.LastAccessCode = HttpStatusCode.RequestTimeout;
-            return Enumerable.Empty<FeedItem>();
         }
-    }
-
-    public IEnumerable<FeedTemplate> RenderUpdates(User user, DateTime? lastUpdate)
-    {
-        // Normalise last update value
-        if (!lastUpdate.HasValue)
-            lastUpdate = DateTime.MinValue.ToUniversalTime();
-
-        var result = new List<FeedTemplate>();
-        foreach (var userFeed in data.UserFeeds.Find(sf => sf.UserId == user.Id))
-        {
-            var feed = data.Feeds.FindById(userFeed.FeedId);
-            if (feed == null) continue;
-
-            var items = data.FeedItems
-                .Find(i => i.FeedId == userFeed.FeedId && i.Timestamp > lastUpdate)
-                .ToList();
-            if (items.Count > 0)
-                result.Add(new FeedTemplate
-                {
-                    Name = userFeed.Name ?? feed.Name ?? "The feed with no name",
-                    Items = items
-                });
-        }
-
-        return result;
     }
 }

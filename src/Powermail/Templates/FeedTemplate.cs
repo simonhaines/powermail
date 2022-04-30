@@ -1,5 +1,6 @@
 using MimeKit;
 using Powermail.Data;
+using Powermail.Data.Models;
 using Scriban;
 
 namespace Powermail.Templates;

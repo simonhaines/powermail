@@ -1,8 +1,12 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using Powermail.Activities;
 using Powermail.Data;
-using Powermail.Processors;
-using Powermail.Server;
+using Powermail.Handlers;
+using Powermail.Services;
+using Powermail.Servers;
 
 Host.CreateDefaultBuilder()
     .UseSystemd()
@@ -10,15 +14,27 @@ Host.CreateDefaultBuilder()
     {
         services
             .AddLogging()
-            .AddSingleton(new Data("data.db"))
+            .AddDbContext<DataContext>(options =>
+            {
+                options.UseSqlite(context.Configuration.GetConnectionString("SQLite"));
+            })
             .AddSingleton<HttpClient>()
-            .AddTransient<Feeds>()
-            .Configure<MailerConfiguration>(context.Configuration.GetSection("Mailer"))
-            .AddTransient<Mailer>()
+            .AddTransient<Syndication>()
+            .Configure<PostOfficeConfiguration>(context.Configuration.GetSection("PostOffice"))
+            .AddTransient<PostOffice>()
+
+            // Scheduled activities
+            .AddTransient<IActivity, SendFeeds>()
+            .AddTransient<IActivity, UpdateFeeds>()
+            
+            // Mail handlers
+            .AddTransient<IMailHandler, Echo>()
+
+            // Servers
             .Configure<SchedulerConfiguration>(context.Configuration.GetSection("Scheduler"))
             .AddHostedService<Scheduler>()
-            .Configure<ServerConfiguration>(context.Configuration.GetSection("Server"))
-            .AddHostedService<Server>();
+            .Configure<InboxConfiguration>(context.Configuration.GetSection("Inbox"))
+            .AddHostedService<Inbox>();
     })
     .Build()
     .Run();

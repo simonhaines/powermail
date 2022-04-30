@@ -4,14 +4,17 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using Powermail.Data;
+using Powermail.Data.Models;
+using Powermail.Services;
 
-namespace Powermail.Tests.Processors;
+namespace Powermail.Tests.Services;
 
 [TestClass]
-public class Feeds
+public class Syndication
 {
     [TestMethod]
     public async Task TestAdd()
@@ -21,17 +24,18 @@ public class Feeds
 
         var feed = new Feed { Name = "Wikipedia" };
         var services = GetServices();
-        var feedsService = services.GetRequiredService<Powermail.Processors.Feeds>();
+        var syndication = services.GetRequiredService<Powermail.Services.Syndication>();
 
         feed.Url = wikipediaNewPagesRss;
         feed.Timestamp = DateTime.MinValue.ToUniversalTime();
-        var rssItems = await feedsService.UpdateFeed(feed, CancellationToken.None);
-        Assert.IsTrue(rssItems.Any());
+        await syndication.UpdateFeed(feed, CancellationToken.None);
+        Assert.IsTrue(feed.Items.Any());
+        feed.Items.Clear();
 
         feed.Url = wikipediaNewPagesAtom;
         feed.Timestamp = DateTime.MinValue.ToUniversalTime();
-        var atomItems = await feedsService.UpdateFeed(feed, CancellationToken.None);
-        Assert.IsTrue(atomItems.Any());
+        await syndication.UpdateFeed(feed, CancellationToken.None);
+        Assert.IsTrue(feed.Items.Any());
     }
 
     private ServiceProvider GetServices()
@@ -39,9 +43,9 @@ public class Feeds
         var services = new ServiceCollection();
         services
             .AddLogging()
-            .AddSingleton(new Data.Data(new MemoryStream()))
+            .AddDbContext<DataContext>(options => options.UseSqlite("Data Source=:memory:"))
             .AddSingleton<HttpClient>()
-            .AddSingleton<Powermail.Processors.Feeds>();
+            .AddTransient<Powermail.Services.Syndication>();
         return services.BuildServiceProvider();
     }
 }

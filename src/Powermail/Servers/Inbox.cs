@@ -1,33 +1,34 @@
 using System.Diagnostics;
 using System.Net;
 using System.Net.Sockets;
-using LiteDB;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using MimeKit;
+using Powermail.Handlers;
 
-namespace Powermail.Server;
+namespace Powermail.Servers;
 
-public class ServerConfiguration
+public class InboxConfiguration
 {
     public int Port { get; set; }
 }
 
-public class Server : BackgroundService
+public class Inbox : BackgroundService
 {
-    private readonly IOptions<ServerConfiguration> configuration;
-    private readonly Data.Data data;
-    private readonly ILogger<Server> logger;
+    private readonly IOptions<InboxConfiguration> configuration;
+    private readonly IServiceProvider serviceProvider;
+    private readonly ILogger<Inbox> logger;
     
-    public Server(IOptions<ServerConfiguration> configuration, Data.Data data, ILogger<Server> logger)
+    public Inbox(IOptions<InboxConfiguration> configuration, IServiceProvider serviceProvider, ILogger<Inbox> logger)
     {
         this.configuration = configuration;
-        this.data = data;
+        this.serviceProvider = serviceProvider;
         this.logger = logger;
     }
 
-    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    protected async override Task ExecuteAsync(CancellationToken token)
     {
         var listener = new TcpListener(IPAddress.Any, configuration.Value.Port);
         listener.Start();
@@ -35,10 +36,10 @@ public class Server : BackgroundService
 
         try
         {
-            while (!stoppingToken.IsCancellationRequested)
+            while (!token.IsCancellationRequested)
             {
-                var client = await listener.AcceptTcpClientAsync(stoppingToken);
-                _ = Task.Run(async () => await Process(client, stoppingToken), stoppingToken);
+                var client = await listener.AcceptTcpClientAsync(token);
+                _ = Task.Run(() => Process(client, token), token);
             }
         }
         catch (Exception e)
@@ -50,21 +51,19 @@ public class Server : BackgroundService
         logger.LogInformation("Server stopped");
     }
 
-    private async Task Process(TcpClient client, CancellationToken token)
+    private void Process(TcpClient client, CancellationToken token)
     {
         var stopwatch = Stopwatch.StartNew();
         try
         {
-            using var message = await MimeMessage.LoadAsync(client.GetStream(), token);
+            using var message = MimeMessage.Load(client.GetStream(), token);
             if (message != null)
             {
-                // Save the whole message
-                await using var messageStream = new MemoryStream();
-                await message.WriteToAsync(messageStream, token);
-                messageStream.Position = 0;
-
-                var id = ObjectId.NewObjectId();
-                data.InboxStorage.Upload(id, id.ToString(), messageStream);
+                // Load the processing pipeline
+                using var scope = serviceProvider.CreateScope();
+                var handlers = scope.ServiceProvider.GetServices<IMailHandler>();
+                var tasks = handlers.Select(h => h.Process(message, token));
+                Task.WhenAll(tasks).Wait(token);
             }
         }
         catch (Exception e)
