@@ -33,7 +33,7 @@ public class UpdateFeeds : IActivity
             foreach (var feed in feeds)
             {
                 // Filter out feeds that have been updated in the last day
-                if (feed.Timestamp.HasValue && feed.Timestamp.Value.Add(TimeSpan.FromDays(1)) < DateTime.UtcNow)
+                if (feed.Timestamp.HasValue && feed.Timestamp.Value.Add(TimeSpan.FromDays(1)) > DateTime.UtcNow)
                     continue;
 
                 try
