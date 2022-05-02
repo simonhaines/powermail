@@ -12,6 +12,4 @@ public class FeedItem
     public string Title { get; set; } = string.Empty;
     [Required]
     public DateTime Timestamp { get; set; } = DateTime.MinValue.ToUniversalTime();
-    [Required]
-    public string InternalId { get; set; } = string.Empty;
 }

@@ -53,10 +53,6 @@ namespace Powermail.Data.Migrations
                     b.Property<int>("FeedId")
                         .HasColumnType("INTEGER");
 
-                    b.Property<string>("InternalId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
-
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");
 

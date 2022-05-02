@@ -40,8 +40,8 @@ public class UpdateFeeds : IActivity
                 {
                     var start = stopwatch.ElapsedMilliseconds;
 
-                    // Gather and insert the new feed items
-                    await syndication.UpdateFeed(feed, token);
+                    // Sync the database with the feed
+                    await syndication.Sync(data, feed, token);
                     logger.LogInformation("Feed '{feed}' ({time}ms): {items} items, {errors} errors",
                         feed.Name, stopwatch.ElapsedMilliseconds - start, feed.Items.Count, feed.ErrorCount);
                 }

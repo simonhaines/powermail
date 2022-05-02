@@ -24,12 +24,12 @@ public class SendFeeds : IActivity
     public async Task Execute(TimeSpan period, CancellationToken token)
     {
         var stopwatch = Stopwatch.StartNew();
-        var nextSchedule = DateTime.UtcNow + period;
 
         try
         {
             // Send all feeds that are scheduled
-            foreach (var user in await data.Users.ToListAsync())
+            var nextSchedule = DateTime.UtcNow + period;
+            foreach (var user in await data.Users.ToListAsync(token))
             {
                 // Ignore this schedule if it is not due
                 var due = (user.FeedTimestamp ?? DateTime.MinValue.ToUniversalTime()) + user.FeedInterval; 
@@ -43,7 +43,10 @@ public class SendFeeds : IActivity
                     await postOffice.Send(user, "Feed updates", templates, token);
 
                     // Update the time the feed items were sent (or not)
-                    user.FeedTimestamp = DateTime.UtcNow;
+                    if (user.FeedTimestamp.HasValue)
+                        user.FeedTimestamp = user.FeedTimestamp.Value + user.FeedInterval;
+                    else
+                        user.FeedTimestamp = DateTime.UtcNow;
                 }
                 else logger.LogDebug("No items to send for {user}", user.Name);
             }

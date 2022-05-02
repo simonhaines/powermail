@@ -11,7 +11,7 @@ using Powermail.Data;
 namespace Powermail.Data.Migrations
 {
     [DbContext(typeof(DataContext))]
-    [Migration("20220430051223_Initial")]
+    [Migration("20220502025723_Initial")]
     partial class Initial
     {
         protected override void BuildTargetModel(ModelBuilder modelBuilder)
@@ -54,10 +54,6 @@ namespace Powermail.Data.Migrations
 
                     b.Property<int>("FeedId")
                         .HasColumnType("INTEGER");
-
-                    b.Property<string>("InternalId")
-                        .IsRequired()
-                        .HasColumnType("TEXT");
 
                     b.Property<DateTime>("Timestamp")
                         .HasColumnType("TEXT");

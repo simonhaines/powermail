@@ -1,4 +1,5 @@
 using System.Net;
+using System.Net.Http.Headers;
 using CodeHollow.FeedReader;
 using CodeHollow.FeedReader.Feeds;
 using Microsoft.Extensions.Logging;
@@ -8,22 +9,21 @@ namespace Powermail.Services;
 
 public class Syndication
 {
-    private readonly DataContext data;
     private readonly HttpClient client;
     private readonly ILogger<Syndication> logger;
 
-    public Syndication(DataContext data, HttpClient client, ILogger<Syndication> logger)
+    public Syndication(HttpClient client, ILogger<Syndication> logger)
     {
-        this.data = data ?? throw new ArgumentNullException(nameof(data));
         this.client = client ?? throw new ArgumentNullException(nameof(client));
         this.logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
-    public async Task UpdateFeed(Data.Models.Feed feed, CancellationToken token)
+    public async Task Sync(DataContext data, Data.Models.Feed feed, CancellationToken token)
     {
         try
         {
             using var request = new HttpRequestMessage(HttpMethod.Get, feed.Url);
+            request.Headers.UserAgent.Add(new ProductInfoHeaderValue("Powermail", "1.0"));
             request.Headers.IfModifiedSince = feed.Timestamp;
 
             // Don't hang on slow feeds
@@ -50,14 +50,13 @@ public class Syndication
             feed.Name ??= feedContent.Title;
             feed.ErrorCount = 0;
             feed.Timestamp = DateTime.UtcNow;
-            
-            // Insert new items
+
+            // Remove old items
+            data.FeedItems.RemoveRange(feed.Items);
+            feed.Items.Clear();
+
             foreach (var item in feedContent.Items)
             {
-                // Skip items with the same internal Id
-                if (feed.Items.Any(i => i.InternalId == item.Id))
-                    continue;
-                
                 // Try to determine a published date
                 var published = DateTime.UtcNow;
                 
