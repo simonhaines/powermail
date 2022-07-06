@@ -32,7 +32,7 @@ public class SendFeeds : IActivity
             foreach (var user in await data.Users.ToListAsync(token))
             {
                 // Ignore this schedule if it is not due
-                var due = (user.FeedTimestamp ?? DateTime.MinValue.ToUniversalTime()) + user.FeedInterval; 
+                var due = (user.FeedTimestamp ?? DateTime.MinValue.ToUniversalTime()); 
                 if (due > nextSchedule)
                     continue;
 
@@ -49,6 +49,15 @@ public class SendFeeds : IActivity
                         user.FeedTimestamp = DateTime.UtcNow;
                 }
                 else logger.LogDebug("No items to send for {user}", user.Name);
+                
+                // Update the schedule for the next feed delivery
+                if (!user.FeedTimestamp.HasValue)
+                    user.FeedTimestamp = DateTime.UtcNow + user.FeedInterval;
+                else
+                    user.FeedTimestamp = user.FeedTimestamp.Value + user.FeedInterval;
+
+                logger.LogDebug("Next schedule for {user} is {time}", user.Name,
+                    user.FeedTimestamp.Value.ToLocalTime().ToString("s"));
             }
         }
         catch (Exception e)
@@ -64,7 +73,6 @@ public class SendFeeds : IActivity
     
     private async Task<List<FeedTemplate>> RenderUpdates(User user)
     {
-        var lastUpdate = user.FeedTimestamp ?? DateTime.MinValue.ToUniversalTime();
         var result = new List<FeedTemplate>();
         var userFeeds = await data.UserFeeds
             .Where(uf => uf.User == user)
@@ -73,8 +81,9 @@ public class SendFeeds : IActivity
 
         foreach (var userFeed in userFeeds)
         {
+            var checkpoint = userFeed.Checkpoint ?? DateTime.MinValue.ToUniversalTime();
             var items = userFeed.Feed.Items
-                .Where(i => i.Timestamp > lastUpdate)
+                .Where(i => i.Timestamp > checkpoint)
                 .ToList();
             if (items.Count > 0)
                 result.Add(new FeedTemplate
@@ -82,6 +91,9 @@ public class SendFeeds : IActivity
                     Name = userFeed.Name ?? userFeed.Feed.Name ?? "The feed with no name",
                     Items = items
                 });
+            
+            // Checkpoint the feed timestamp so items published after this are sent next time
+            userFeed.Checkpoint = userFeed.Feed.Timestamp;
         }
 
         return result;
