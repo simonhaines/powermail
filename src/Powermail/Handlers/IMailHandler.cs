@@ -1,8 +1,9 @@
 using MimeKit;
+using Powermail.Templates;
 
 namespace Powermail.Handlers;
 
 public interface IMailHandler
 {
-    Task Process(MimeMessage message, CancellationToken token);
+    Task<ITemplate?> Process(MimeMessage message, CancellationToken token);
 }

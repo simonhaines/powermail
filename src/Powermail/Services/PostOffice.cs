@@ -37,10 +37,13 @@ public class PostOffice
         // Build the body
         var builder = new BodyBuilder();
         foreach (var template in templates)
-            template.Render(builder);
+            await template.Render(builder, token);
         message.Body = builder.ToMessageBody();
-        
-        // Send
+        await Send(message, token);
+    }
+
+    public async Task Send(MimeMessage message, CancellationToken token)
+    {
         using var client = new SmtpClient();
         await client.ConnectAsync(configuration.Value.Host, configuration.Value.Port, SecureSocketOptions.Auto, token);
         await client.AuthenticateAsync(configuration.Value.User, configuration.Value.Password, token);
@@ -48,32 +51,13 @@ public class PostOffice
         await client.DisconnectAsync(true, token);
     }
 
-    public async Task Echo(MimeMessage source, CancellationToken token)
+    public MimeMessage CreateReply(MimeMessage source)
     {
-        // Create the message
-        var message = new MimeMessage();
-        message.From.Add(new MailboxAddress(configuration.Value.Name, configuration.Value.Address));
-        message.To.Add(source.From.First());
-        message.Subject = string.Concat("Re: ", source.Subject);
-        message.InReplyTo = source.MessageId;
-
-        // Create an attachment stream
-        await using var stream = new MemoryStream();
-        await source.WriteToAsync(stream, token);
-        stream.Position = 0;
-
-        // Build the body
-        var builder = new BodyBuilder {
-            TextBody = "Email message attached",
-        };
-        await builder.Attachments.AddAsync("email.eml", stream, token);
-        message.Body = builder.ToMessageBody();
-
-        // Send
-        using var client = new SmtpClient();
-        await client.ConnectAsync(configuration.Value.Host, configuration.Value.Port, SecureSocketOptions.Auto, token);
-        await client.AuthenticateAsync(configuration.Value.User, configuration.Value.Password, token);
-        await client.SendAsync(message, token);
-        await client.DisconnectAsync(true, token);
+        var reply = new MimeMessage();
+        reply.From.Add(new MailboxAddress(configuration.Value.Name, configuration.Value.Address));
+        reply.To.Add(source.From.First());
+        reply.Subject = string.Concat("Re: ", source.Subject);
+        reply.InReplyTo = source.MessageId;
+        return reply;
     }
 }

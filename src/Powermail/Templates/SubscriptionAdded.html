@@ -1,0 +1,14 @@
+<div dir="ltr">
+    <div>Your subscription is added.</div>
+    <div>Your current subscriptions are:</div>
+    {{ for sub in Subscriptions }}
+    <div>
+        <b>{{ sub.Name }}</b>
+        <ul>
+            {{ for item in sub.Items }}
+            <li><a href="{{ item.Url }}">{{ item.Title }}</a></li>
+            {{ end }}
+        </ul>
+    </div>
+    {{ end }}
+</div>

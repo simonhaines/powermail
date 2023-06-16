@@ -1,0 +1,8 @@
+Your subscription is added. Your current subscriptions are:
+
+{{ for sub in Subscriptions }}
+  • {{ sub.Title }}
+    {{ item.Url }}
+{{ end }}
+
+{{ end }}

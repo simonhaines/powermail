@@ -13,9 +13,9 @@ public class FeedTemplate : ITemplate
     public string Name { get; init; } = string.Empty;
     public IEnumerable<FeedItem> Items { get; init; } = Enumerable.Empty<FeedItem>();
 
-    public void Render(BodyBuilder builder)
+    public async Task Render(BodyBuilder builder, CancellationToken token)
     {
-        builder.TextBody += Text.Render(this, member => member.Name);
-        builder.HtmlBody += Html.Render(this, member => member.Name);
+        builder.TextBody += await Text.RenderAsync(this, member => member.Name);
+        builder.HtmlBody += await Html.RenderAsync(this, member => member.Name);
     }
 }
